@@ -1,0 +1,7 @@
+[server]
+read_timeout = "5s"
+write_timeout = "5s"
+idle_timeout = "120s"
+host = "localhost"
+port = 4400
+default_api = "/api/v1/"
