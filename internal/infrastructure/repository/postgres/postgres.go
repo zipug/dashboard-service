@@ -18,6 +18,7 @@ var (
 	ErrPqEmailAlreadyExists = errors.New("pq: duplicate key value violates unique constraint \"users_email_unique\"")
 	ErrEmailAlreadyExists   = errors.New("email already exists")
 	ErrGetUserById          = errors.New("could not get user by id")
+	ErrGetUsers             = errors.New("could not get users")
 )
 
 type PostgresRepository struct {
@@ -111,7 +112,7 @@ func (repo *PostgresRepository) GetUserByEmail(ctx context.Context, email string
 		ctx,
 		repo.db,
 		`
-		SELECT state, email, password, name, lastname, avatar_url
+		SELECT id, state, email, password, name, lastname, avatar_url
 		FROM users
 		WHERE email = $1::text;
 		`,
@@ -132,7 +133,7 @@ func (repo *PostgresRepository) GetUserById(ctx context.Context, id int64) (*dto
 		ctx,
 		repo.db,
 		`
-		SELECT state, email, name, lastname, avatar_url
+		SELECT id, state, email, name, lastname, avatar_url
 		FROM users
 		WHERE id = $1::bigint;
 		`,
@@ -146,6 +147,25 @@ func (repo *PostgresRepository) GetUserById(ctx context.Context, id int64) (*dto
 	}
 	usr := usr_rows[0]
 	return &usr, nil
+}
+
+func (repo *PostgresRepository) GetAllUsers(ctx context.Context) ([]dto.UserDbo, error) {
+	usr_rows, err := pu.Dispatch[dto.UserDbo](
+		ctx,
+		repo.db,
+		`
+		SELECT id, state, email, name, lastname, avatar_url
+		FROM users
+		WHERE deleted_at IS NULL;
+		`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(usr_rows) == 0 {
+		return nil, ErrGetUsers
+	}
+	return usr_rows, nil
 }
 
 func (repo *PostgresRepository) SaveUser(ctx context.Context, user dto.UserDbo) error {

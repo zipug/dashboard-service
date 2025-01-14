@@ -5,7 +5,9 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	logger "dashboard/internal/common/service/logger/zerolog"
+	getallusers "dashboard/internal/presentation/http/chi/handlers/get_all_users"
 	getuserbyid "dashboard/internal/presentation/http/chi/handlers/get_user_by_id"
+	getuserinfo "dashboard/internal/presentation/http/chi/handlers/get_user_info"
 	"dashboard/internal/presentation/http/chi/handlers/login"
 	"dashboard/internal/presentation/http/chi/handlers/register"
 	logger_middleware "dashboard/pkg/middlewares/logger"
@@ -70,12 +72,14 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 			render.JSON(w, r, map[string]string{"status": "ok"})
 		})
 
-		r.Route("/user", func(r chi.Router) {
+		r.Route("/users", func(r chi.Router) {
 			r.Group(func(r chi.Router) {
 				r.Use(jwtauth.Verifier(auth.GetTokenAuth()))
 				r.Use(jwtauth.Authenticator(auth.GetTokenAuth()))
 
 				r.Get("/{id}", getuserbyid.GetUserById(app, log))
+				r.Get("/all", getallusers.GetAllUsers(app, log))
+				r.Get("/me", getuserinfo.GetUserInfo(app, log, auth))
 			})
 
 			r.Group(func(r chi.Router) {

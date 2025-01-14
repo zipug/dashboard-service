@@ -4,6 +4,7 @@ import (
 	"context"
 	"dashboard/internal/common/service/config"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -52,4 +53,9 @@ func (a *Auth) HashPassword(password string) (string, error) {
 
 func (a *Auth) ValidatePassword(hashedPassword, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)) == nil
+}
+
+func (a *Auth) GetClaims(r *http.Request) map[string]interface{} {
+	_, claims, _ := jwtauth.FromContext(r.Context())
+	return claims
 }

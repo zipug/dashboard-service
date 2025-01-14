@@ -7,6 +7,10 @@ import (
 
 var BadUserId = -1
 
+type AuthenticateDto struct {
+	Token string `json:"token,omitempty"`
+}
+
 type UserDto struct {
 	Id             int64        `json:"id,omitempty"`
 	State          models.State `json:"state,omitempty"`
@@ -41,6 +45,7 @@ type SafeUserDto struct {
 
 func (dto *UserDto) ToValue() models.User {
 	return models.User{
+		Id:             models.Id(dto.Id),
 		State:          models.State(dto.State),
 		Email:          models.Email(dto.Email),
 		Password:       models.Password(dto.Password),
@@ -52,6 +57,7 @@ func (dto *UserDto) ToValue() models.User {
 
 func (dbo *UserDbo) ToValue() models.User {
 	return models.User{
+		Id:        models.Id(dbo.Id),
 		State:     models.State(dbo.State),
 		Email:     models.Email(dbo.Email),
 		Password:  models.Password(dbo.Password),

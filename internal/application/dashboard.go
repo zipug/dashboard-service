@@ -72,8 +72,20 @@ func (d *DashboardService) LoginUser(user dto.UserDto) (models.User, error) {
 		d.log.Log("error", "error while loginnig user", logger.WithErrAttr(err))
 		return usr, err
 	}
-	d.log.Log("info", "user successfully logined", logger.WithInt64Attr("user_id", user.Id))
+	d.log.Log("info", "user successfully logined", logger.WithInt64Attr("user_id", int64(usr.Id)))
 	return usr, nil
+}
+
+func (d *DashboardService) GetAllUsers() ([]models.User, error) {
+	d.log.Log("info", "get all users")
+	ctx := context.Background()
+	users, err := d.user.GetAllUsers(ctx)
+	if err != nil {
+		d.log.Log("error", "error while fetching users", logger.WithErrAttr(err))
+		return users, err
+	}
+	d.log.Log("info", "users successfully fetched", logger.WithInt64Attr("user_count", int64(len(users))))
+	return users, nil
 }
 
 func (d *DashboardService) SaveUser(user models.User) {

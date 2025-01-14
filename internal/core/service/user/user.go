@@ -16,15 +16,6 @@ func NewUserService(repo ports.UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (u *UserService) GetUserById(ctx context.Context, id int64) (models.User, error) {
-	dbo, err := u.repo.GetUserById(ctx, id)
-	if err != nil {
-		return models.User{}, err
-	}
-	user := dbo.ToValue()
-	return user, nil
-}
-
 func (u *UserService) RegisterUser(ctx context.Context, user models.User) (int64, error) {
 	ok, errs := user.IsValid()
 	if !ok {
@@ -51,6 +42,28 @@ func (u *UserService) LoginUser(ctx context.Context, user models.User) (models.U
 		return models.User{}, err
 	}
 	return usr.ToValue(), nil
+}
+
+func (u *UserService) GetUserById(ctx context.Context, id int64) (models.User, error) {
+	dbo, err := u.repo.GetUserById(ctx, id)
+	if err != nil {
+		return models.User{}, err
+	}
+	user := dbo.ToValue()
+	return user, nil
+}
+
+func (u *UserService) GetAllUsers(ctx context.Context) ([]models.User, error) {
+	dbos, err := u.repo.GetAllUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var users []models.User
+	for _, dbo := range dbos {
+		user := dbo.ToValue()
+		users = append(users, user)
+	}
+	return users, nil
 }
 
 func (u *UserService) SaveUser(ctx context.Context, user models.User) error {

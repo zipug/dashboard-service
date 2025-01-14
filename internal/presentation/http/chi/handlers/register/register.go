@@ -4,7 +4,6 @@ import (
 	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
 	"dashboard/internal/presentation/http/chi/handlers"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -24,10 +23,6 @@ type Logger interface {
 type Auth interface {
 	GetTokenAuth() *jwtauth.JWTAuth
 	HashPassword(string) (string, error)
-}
-
-type RegisterResponse struct {
-	Id int64 `json:"id"`
 }
 
 func RegisterUser(app DashboardService, log Logger, auth Auth, accessTokenExp time.Duration) http.HandlerFunc {
@@ -65,7 +60,8 @@ func RegisterUser(app DashboardService, log Logger, auth Auth, accessTokenExp ti
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", token))
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: RegisterResponse{Id: id}})
+
+		authToken := dto.AuthenticateDto{Token: token}
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: authToken})
 	}
 }

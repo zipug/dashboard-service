@@ -5,7 +5,6 @@ import (
 	logger "dashboard/internal/common/service/logger/zerolog"
 	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -60,10 +59,9 @@ func LoginUser(app DashboardService, log Logger, auth Auth, accessTokenExp time.
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"something went wrong"}})
 			return
 		}
-		userDto := dto.ToSafeUserDto(user)
+		authToken := dto.AuthenticateDto{Token: token}
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", token))
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: userDto})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: authToken})
 	}
 }
