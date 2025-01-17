@@ -24,15 +24,17 @@ type DashboardService struct {
 	cfg   *config.AppConfig
 	user  ports.UserService
 	auth  *auth.Auth
+	otp   ports.OTPService
 	log   *logger.Logger
 	state State
 }
 
-func NewDashboardService(cfg *config.AppConfig, user ports.UserService, auth *auth.Auth) *DashboardService {
+func NewDashboardService(cfg *config.AppConfig, user ports.UserService, auth *auth.Auth, otp ports.OTPService) *DashboardService {
 	d := &DashboardService{
 		cfg:  cfg,
 		user: user,
 		auth: auth,
+		otp:  otp,
 	}
 
 	d.state = Created
@@ -104,6 +106,34 @@ func (d *DashboardService) DeleteUser(id int64) {
 		fmt.Printf("error occured while deleting user with id: %d, %s\n", id, err.Error())
 	}
 	fmt.Println("user successfully deleted")
+}
+
+func (d *DashboardService) SendOTPByUserId(user_id int64, target models.OTPTarget) error {
+	if err := d.otp.SendOTPByUserId(user_id, target); err != nil {
+		d.log.Log("error", "error occured while sending otp code to email", logger.WithErrAttr(err))
+		return err
+	}
+	d.log.Log(
+		"info",
+		"otp code successfully sended to user email",
+		logger.WithInt64Attr("user_id", user_id),
+		logger.WithStrAttr("target", string(target)),
+	)
+	return nil
+}
+
+func (d *DashboardService) SendOTPByUserEmail(email string, target models.OTPTarget) error {
+	if err := d.otp.SendOTPByUserEmail(email, target); err != nil {
+		d.log.Log("error", "error occured while sending otp code to email", logger.WithErrAttr(err))
+		return err
+	}
+	d.log.Log(
+		"info",
+		"otp code successfully sended to user email",
+		logger.WithStrAttr("email", email),
+		logger.WithStrAttr("target", string(target)),
+	)
+	return nil
 }
 
 func (d *DashboardService) GetConfig() *config.AppConfig {

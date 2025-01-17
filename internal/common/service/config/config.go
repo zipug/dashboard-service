@@ -57,6 +57,10 @@ type Server struct {
 	IdleTimeout  time.Duration `toml:"idle_timeout" env:"IDLE_TIMEOUT" env-default:"60s"`
 }
 
+type OTP struct {
+	Max int `toml:"max" env:"OTP_MAX" env-default:"6"`
+}
+
 type AppConfig struct {
 	Env                   string        `env:"ENV" env-default:"development"`
 	JwtSecretKey          string        `toml:"jwt_secret_key" env:"JWT_SECREY_KEY" env-required:"true"`
@@ -68,6 +72,7 @@ type AppConfig struct {
 	Prometheus            Prometheus    `toml:"prometheus"`
 	MiniO                 MiniO         `toml:"minio"`
 	Server                Server        `toml:"server" env-required:"true"`
+	OTP                   OTP           `toml:"otp"`
 	configPath            string
 }
 

@@ -66,6 +66,14 @@ func (u *UserService) GetAllUsers(ctx context.Context) ([]models.User, error) {
 	return users, nil
 }
 
+func (u *UserService) GetUserEmailById(ctx context.Context, user_id int64) (models.Email, error) {
+	dbo, err := u.repo.GetUserById(ctx, user_id)
+	if err != nil {
+		return models.Email(""), err
+	}
+	return models.Email(dbo.Email), nil
+}
+
 func (u *UserService) SaveUser(ctx context.Context, user models.User) error {
 	dbo := dto.ToUserDbo(user)
 	return u.repo.SaveUser(ctx, dbo)

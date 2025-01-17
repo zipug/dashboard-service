@@ -1,7 +1,9 @@
 FROM golang:1.23-alpine AS builder
 
-ARG CGO_ENABLED=0
+# CAUSE I USE confluent-kafka-go package with C library bindings
+# ARG CGO_ENABLED=0
 ARG GOOS=linux
+ARG GOARCH=amd64
 WORKDIR /app
 
 COPY go.mod go.sum ./
