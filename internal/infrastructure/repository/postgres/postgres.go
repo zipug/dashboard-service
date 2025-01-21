@@ -7,6 +7,7 @@ import (
 	pu "dashboard/pkg/postgres_utils"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -31,8 +32,9 @@ type PostgresRepository struct {
 
 func NewPostgresRepository(cfg *config.AppConfig) *PostgresRepository {
 	repo := &PostgresRepository{}
-	repo.InvokeConnect(cfg)
-	fmt.Printf("Postgres connected on port: %v\n", cfg)
+	if err := repo.InvokeConnect(cfg); err != nil {
+		panic(err)
+	}
 	return repo
 }
 
@@ -52,11 +54,32 @@ func (repo *PostgresRepository) InvokeConnect(cfg *config.AppConfig) error {
 	if err != nil {
 		return ErrConnect
 	}
-	if err := db.Ping(); err != nil {
-		return fmt.Errorf("%w: postgres_uri: %s", ErrPing, postgres_uri)
-	}
 	repo.db = db
+	if err := repo.PingTest(); err != nil {
+		panic(err)
+	}
 	return nil
+}
+
+func (repo *PostgresRepository) PingTest() error {
+	max_errs := 5
+	errs := 0
+	timeout := 1 * time.Second
+	for max_errs > 0 {
+		if err := repo.db.Ping(); err != nil {
+			fmt.Printf("could not ping database: %s\n", err.Error())
+			fmt.Printf("retrying in %s\n", timeout)
+			max_errs--
+			errs++
+			time.Sleep(timeout)
+		}
+		max_errs = 0
+		errs = 0
+	}
+	if errs == 0 {
+		return nil
+	}
+	return fmt.Errorf("%w: postgres_uri: %s", ErrPing, repo.uri)
 }
 
 func (repo *PostgresRepository) Close() {

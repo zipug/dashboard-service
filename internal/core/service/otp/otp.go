@@ -1,19 +1,22 @@
 package otp
 
 import (
+	"context"
 	"crypto/rand"
 	"dashboard/internal/common/service/config"
 	"dashboard/internal/core/models"
+	"dashboard/internal/core/ports"
 	"io"
 	"strconv"
 )
 
 type OTPService struct {
-	Max int
+	Max  int
+	repo ports.OTPRepository
 }
 
-func NewOTPService(cfg *config.AppConfig) *OTPService {
-	return &OTPService{Max: cfg.OTP.Max}
+func NewOTPService(cfg *config.AppConfig, repo ports.OTPRepository) *OTPService {
+	return &OTPService{Max: cfg.OTP.Max, repo: repo}
 }
 
 func (otp *OTPService) generate() (models.OTPCode, error) {
@@ -32,10 +35,14 @@ func (otp *OTPService) generate() (models.OTPCode, error) {
 	return models.OTPCode(code), nil
 }
 
-func (otp *OTPService) SendOTPByUserId(user_id int64, target models.OTPTarget) error {
-	return nil
+func (otp *OTPService) SendOTP(ctx context.Context, user_id int64) error {
+	code, err := otp.generate()
+	if err != nil {
+		return err
+	}
+	return otp.repo.SaveUserOTP(ctx, user_id, code)
 }
 
-func (otp *OTPService) SendOTPByUserEmail(email string, target models.OTPTarget) error {
-	return nil
+func (otp *OTPService) GetOTP(ctx context.Context, user_id int64) (models.OTPCode, error) {
+	return otp.repo.GetUserOTP(ctx, user_id)
 }

@@ -18,8 +18,12 @@ type Kafka struct {
 }
 
 type Redis struct {
-	Host string `toml:"host" env:"REDIS_HOST"`
-	Port int    `toml:"port" env:"REDIS_PORT"`
+	Host          string `toml:"host" env:"REDIS_HOST" env-default:"localhost"`
+	Port          int    `toml:"port" env:"REDIS_PORT" env-default:"6380"`
+	DB            int    `toml:"db" env:"REDIS_DB" env-default:"0"`
+	User          string `toml:"user" env:"REDIS_USER"`
+	Password      string `toml:"password" env:"REDIS_USER_PASSWORD"`
+	RedisPassword string `toml:"redis_password" env:"REDIS_PASSWORD"`
 }
 
 type Postgres struct {
@@ -58,7 +62,8 @@ type Server struct {
 }
 
 type OTP struct {
-	Max int `toml:"max" env:"OTP_MAX" env-default:"6"`
+	Max            int           `toml:"max" env:"OTP_MAX" env-default:"6"`
+	ExpirationTime time.Duration `toml:"expiration_time" env:"OTP_EXPIRATION_TIME" env-default:"60s"`
 }
 
 type AppConfig struct {
@@ -90,7 +95,6 @@ func NewConfigService() *AppConfig {
 
 	cfg := &AppConfig{configPath: path}
 	cfg.load()
-
 	return cfg
 }
 

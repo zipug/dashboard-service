@@ -108,22 +108,14 @@ func (d *DashboardService) DeleteUser(id int64) {
 	fmt.Println("user successfully deleted")
 }
 
-func (d *DashboardService) SendOTPByUserId(user_id int64, target models.OTPTarget) error {
-	if err := d.otp.SendOTPByUserId(user_id, target); err != nil {
-		d.log.Log("error", "error occured while sending otp code to email", logger.WithErrAttr(err))
+func (d *DashboardService) SendOTP(email string) error {
+	ctx := context.Background()
+	user, err := d.user.GetUserByEmail(ctx, email)
+	if err != nil {
+		d.log.Log("error", "error occured while getting user by email", logger.WithStrAttr("email", email), logger.WithErrAttr(err))
 		return err
 	}
-	d.log.Log(
-		"info",
-		"otp code successfully sended to user email",
-		logger.WithInt64Attr("user_id", user_id),
-		logger.WithStrAttr("target", string(target)),
-	)
-	return nil
-}
-
-func (d *DashboardService) SendOTPByUserEmail(email string, target models.OTPTarget) error {
-	if err := d.otp.SendOTPByUserEmail(email, target); err != nil {
+	if err := d.otp.SendOTP(ctx, int64(user.Id)); err != nil {
 		d.log.Log("error", "error occured while sending otp code to email", logger.WithErrAttr(err))
 		return err
 	}
@@ -131,7 +123,6 @@ func (d *DashboardService) SendOTPByUserEmail(email string, target models.OTPTar
 		"info",
 		"otp code successfully sended to user email",
 		logger.WithStrAttr("email", email),
-		logger.WithStrAttr("target", string(target)),
 	)
 	return nil
 }

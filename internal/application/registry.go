@@ -6,12 +6,13 @@ import (
 	"dashboard/internal/core/service/otp"
 	"dashboard/internal/core/service/user"
 	"dashboard/internal/infrastructure/repository/postgres"
+	"dashboard/internal/infrastructure/repository/redis"
 )
 
 var (
 	configCommonService = config.NewConfigService()
 	userCoreService     = user.NewUserService(postgres.NewPostgresRepository(configCommonService))
-	otpCoreService      = otp.NewOTPService(configCommonService)
+	otpCoreService      = otp.NewOTPService(configCommonService, redis.NewRedisRepository(configCommonService))
 	authModule          = auth.New(configCommonService)
 )
 

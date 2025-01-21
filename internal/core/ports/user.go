@@ -10,6 +10,7 @@ type UserService interface {
 	RegisterUser(context.Context, models.User) (int64, error)
 	LoginUser(context.Context, models.User) (models.User, error)
 	GetUserById(context.Context, int64) (models.User, error)
+	GetUserByEmail(context.Context, string) (models.User, error)
 	GetAllUsers(context.Context) ([]models.User, error)
 	SaveUser(context.Context, models.User) error
 	DeleteUser(context.Context, int64) error

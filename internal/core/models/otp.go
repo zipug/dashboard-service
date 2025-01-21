@@ -1,13 +1,11 @@
 package models
 
-type OTPCode int
-
-type OTPTarget string
-
-const (
-	VERIFICATION   OTPTarget = "verify"
-	AUTHENTICATION OTPTarget = "auth"
+import (
+	"errors"
+	"strconv"
 )
+
+type OTPCode int
 
 var OTPTable = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
@@ -28,4 +26,20 @@ func (code OTPCode) IsValid() bool {
 		return false
 	}
 	return code.len() == 6
+}
+
+func (code OTPCode) ToStr() (string, error) {
+	otp := strconv.Itoa(int(code))
+	if otp == "" {
+		return otp, errors.New("OTPCode is not valid")
+	}
+	return otp, nil
+}
+
+func StrToOTPCode(otp string) (OTPCode, error) {
+	code, err := strconv.Atoi(otp)
+	if err != nil {
+		return OTPCode(0), err
+	}
+	return OTPCode(code), nil
 }

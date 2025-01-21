@@ -81,13 +81,12 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 				r.Get("/{id}", getuserbyid.GetUserById(app, log))
 				r.Get("/all", getallusers.GetAllUsers(app, log))
 				r.Get("/me", getuserinfo.GetUserInfo(app, log, auth))
-				r.Post("/send-code/{target}", sendotp.SendOTP(app, log, auth))
 			})
 
 			r.Group(func(r chi.Router) {
 				r.Post("/register", register.RegisterUser(app, log, auth, cfg.AccessTokenExpiration))
 				r.Post("/login", login.LoginUser(app, log, auth, cfg.AccessTokenExpiration))
-				r.Post("/send-code/{target}", sendotp.SendOTP(app, log, auth))
+				r.Post("/send-code", sendotp.SendOTP(app, log))
 			})
 		})
 	})
