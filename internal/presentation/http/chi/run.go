@@ -11,6 +11,7 @@ import (
 	"dashboard/internal/presentation/http/chi/handlers/login"
 	"dashboard/internal/presentation/http/chi/handlers/register"
 	sendotp "dashboard/internal/presentation/http/chi/handlers/send_otp"
+	verifyuser "dashboard/internal/presentation/http/chi/handlers/verify_user"
 	logger_middleware "dashboard/pkg/middlewares/logger"
 	"fmt"
 	"net/http"
@@ -81,6 +82,7 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 				r.Get("/{id}", getuserbyid.GetUserById(app, log))
 				r.Get("/all", getallusers.GetAllUsers(app, log))
 				r.Get("/me", getuserinfo.GetUserInfo(app, log, auth))
+				r.Post("/verify", verifyuser.Verify(app, log, auth))
 			})
 
 			r.Group(func(r chi.Router) {

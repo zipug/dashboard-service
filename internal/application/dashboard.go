@@ -127,6 +127,11 @@ func (d *DashboardService) SendOTP(email string) error {
 	return nil
 }
 
+func (d *DashboardService) VerifyUser(code models.OTPCode) error {
+	/*TODO*/
+	return nil
+}
+
 func (d *DashboardService) GetConfig() *config.AppConfig {
 	return d.cfg
 }

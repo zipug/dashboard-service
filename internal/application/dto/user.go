@@ -43,6 +43,10 @@ type SafeUserDto struct {
 	AvatarUrl string       `json:"avatar_url,omitempty"`
 }
 
+type VerifyUserDto struct {
+	Code models.OTPCode `json:"code"`
+}
+
 func (dto *UserDto) ToValue() models.User {
 	return models.User{
 		Id:             models.Id(dto.Id),

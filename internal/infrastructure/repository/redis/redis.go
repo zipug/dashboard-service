@@ -80,6 +80,7 @@ func (repo *RedisRepository) SaveUserOTP(ctx context.Context, user_id int64, ema
 	if err != nil {
 		return nil
 	}
+	user_id_str := strconv.FormatInt(user_id, 10)
 	evt := models.Event{
 		Type:      "otp",
 		Timestamp: time.Now().Unix(),
@@ -93,6 +94,9 @@ func (repo *RedisRepository) SaveUserOTP(ctx context.Context, user_id int64, ema
 	}
 	message, err := json.Marshal(evt)
 	if err != nil {
+		return err
+	}
+	if err := repo.rdb.Set(ctx, user_id_str, code, repo.expire).Err(); err != nil {
 		return err
 	}
 	if err := repo.rdb.Publish(ctx, "otp", message).Err(); err != nil {
