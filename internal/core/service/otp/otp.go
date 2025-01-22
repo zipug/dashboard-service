@@ -35,12 +35,12 @@ func (otp *OTPService) generate() (models.OTPCode, error) {
 	return models.OTPCode(code), nil
 }
 
-func (otp *OTPService) SendOTP(ctx context.Context, user_id int64) error {
+func (otp *OTPService) SendOTP(ctx context.Context, user_id int64, email string, username string) error {
 	code, err := otp.generate()
 	if err != nil {
 		return err
 	}
-	return otp.repo.SaveUserOTP(ctx, user_id, code)
+	return otp.repo.SaveUserOTP(ctx, user_id, email, username, code)
 }
 
 func (otp *OTPService) GetOTP(ctx context.Context, user_id int64) (models.OTPCode, error) {

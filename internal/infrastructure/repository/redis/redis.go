@@ -4,6 +4,7 @@ import (
 	"context"
 	"dashboard/internal/common/service/config"
 	"dashboard/internal/core/models"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -12,7 +13,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrPing = errors.New("could not ping database")
+var (
+	ErrPing          = errors.New("could not ping database")
+	ErrKeyIsNotValid = errors.New("key is not valid")
+)
 
 type RedisRepository struct {
 	rdb    *redis.Client
@@ -20,12 +24,9 @@ type RedisRepository struct {
 	expire time.Duration
 }
 
-var ErrKeyIsNotValid = errors.New("key is not valid")
-
 func NewRedisRepository(cfg *config.AppConfig) *RedisRepository {
 	repo := &RedisRepository{}
 	if err := repo.InvokeConnect(cfg); err != nil {
-		fmt.Println(cfg.Postgres, cfg.Redis)
 		e := fmt.Errorf("REDIS: redis://%s:%s@%s:%d/%d\n%w", cfg.Redis.User, cfg.Redis.Password, cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB, err)
 		panic(e)
 	}
@@ -70,7 +71,7 @@ func (repo *RedisRepository) PingTest() error {
 	return fmt.Errorf("%w: redis_uri: %s", ErrPing, repo.config.Addr)
 }
 
-func (repo *RedisRepository) SaveUserOTP(ctx context.Context, user_id int64, otp models.OTPCode) error {
+func (repo *RedisRepository) SaveUserOTP(ctx context.Context, user_id int64, email, username string, otp models.OTPCode) error {
 	key := strconv.FormatInt(user_id, 10)
 	if key == "" {
 		return fmt.Errorf("%w: user_id: %d", ErrKeyIsNotValid, user_id)
@@ -79,7 +80,22 @@ func (repo *RedisRepository) SaveUserOTP(ctx context.Context, user_id int64, otp
 	if err != nil {
 		return nil
 	}
-	if err := repo.rdb.Set(ctx, key, code, repo.expire).Err(); err != nil {
+	evt := models.Event{
+		Type:      "otp",
+		Timestamp: time.Now().Unix(),
+		Payload: models.OTPPayload{
+			Type:     models.Verify,
+			UserID:   user_id,
+			UserName: username,
+			Email:    email,
+			Code:     code,
+		},
+	}
+	message, err := json.Marshal(evt)
+	if err != nil {
+		return err
+	}
+	if err := repo.rdb.Publish(ctx, "otp", message).Err(); err != nil {
 		return err
 	}
 	return nil

@@ -115,7 +115,7 @@ func (d *DashboardService) SendOTP(email string) error {
 		d.log.Log("error", "error occured while getting user by email", logger.WithStrAttr("email", email), logger.WithErrAttr(err))
 		return err
 	}
-	if err := d.otp.SendOTP(ctx, int64(user.Id)); err != nil {
+	if err := d.otp.SendOTP(ctx, int64(user.Id), email, string(user.Name)); err != nil {
 		d.log.Log("error", "error occured while sending otp code to email", logger.WithErrAttr(err))
 		return err
 	}
