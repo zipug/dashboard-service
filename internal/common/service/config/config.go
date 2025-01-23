@@ -66,8 +66,10 @@ type OTP struct {
 	ExpirationTime time.Duration `toml:"expiration_time" env:"OTP_EXPIRATION_TIME" env-default:"60s"`
 }
 
+type ENV string
+
 type AppConfig struct {
-	Env                   string        `env:"ENV" env-default:"development"`
+	Env                   ENV           `env:"ENV" env-default:"production"`
 	JwtSecretKey          string        `toml:"jwt_secret_key" env:"JWT_SECREY_KEY" env-required:"true"`
 	AccessTokenExpiration time.Duration `toml:"access_token_exp" env:"ACCESS_TOKEN_EXP" env-required:"true"`
 	Kafka                 Kafka         `toml:"kafka"`
@@ -80,6 +82,11 @@ type AppConfig struct {
 	OTP                   OTP           `toml:"otp"`
 	configPath            string
 }
+
+const (
+	ENV_DEVELOPMENT ENV = "development"
+	ENV_PRODUCTION  ENV = "production"
+)
 
 func NewConfigService() *AppConfig {
 	var path string

@@ -2,23 +2,22 @@ package logger
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 )
 
-func New() func(next http.Handler) http.Handler {
+func New(log *zerolog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+		// output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 
-		log := zerolog.New(output).
-			With().
-			Timestamp().
-			Logger().
-			Level(zerolog.DebugLevel)
-
+		/*log := zerolog.New(output).
+		With().
+		Timestamp().
+		Logger().
+		Level(zerolog.DebugLevel)
+		*/
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			entry := log.With().
 				Str("method", r.Method).

@@ -7,7 +7,7 @@ import (
 
 type OTPService interface {
 	SendOTP(context.Context, int64, string, string) error
-	GetOTP(context.Context, int64) (models.OTPCode, error)
+	VerifyOTP(context.Context, int64, models.OTPCode) error
 }
 
 type OTPRepository interface {

@@ -5,6 +5,11 @@ import (
 	"strconv"
 )
 
+var (
+	ErrInvalidOTPCode = errors.New("invalid otp code")
+	ErrCodeNotEqualTo = errors.New("otp code not equal to")
+)
+
 type OTPCode int
 
 var OTPTable = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
@@ -31,9 +36,13 @@ func (code OTPCode) IsValid() bool {
 func (code OTPCode) ToStr() (string, error) {
 	otp := strconv.Itoa(int(code))
 	if otp == "" {
-		return otp, errors.New("OTPCode is not valid")
+		return otp, ErrInvalidOTPCode
 	}
 	return otp, nil
+}
+
+func (code OTPCode) Equals(new_code OTPCode) bool {
+	return code == new_code
 }
 
 func StrToOTPCode(otp string) (OTPCode, error) {

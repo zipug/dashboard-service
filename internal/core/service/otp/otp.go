@@ -43,6 +43,16 @@ func (otp *OTPService) SendOTP(ctx context.Context, user_id int64, email string,
 	return otp.repo.SaveUserOTP(ctx, user_id, email, username, code)
 }
 
-func (otp *OTPService) GetOTP(ctx context.Context, user_id int64) (models.OTPCode, error) {
-	return otp.repo.GetUserOTP(ctx, user_id)
+func (otp *OTPService) VerifyOTP(ctx context.Context, user_id int64, code models.OTPCode) error {
+	if ok := code.IsValid(); !ok {
+		return models.ErrInvalidOTPCode
+	}
+	db_code, err := otp.repo.GetUserOTP(ctx, user_id)
+	if err != nil {
+		return err
+	}
+	if ok := db_code.Equals(code); !ok {
+		return models.ErrCodeNotEqualTo
+	}
+	return nil
 }

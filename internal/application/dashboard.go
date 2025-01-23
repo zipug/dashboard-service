@@ -90,13 +90,21 @@ func (d *DashboardService) GetAllUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (d *DashboardService) SaveUser(user models.User) {
-	fmt.Println("saving user")
+func (d *DashboardService) SaveUser(user dto.UpdateUserDto) (models.User, error) {
+	d.log.Log(
+		"info",
+		"saving user",
+		logger.WithStrAttr("email", user.Email),
+		logger.WithInt64Attr("id", int64(user.Id)),
+	)
 	ctx := context.Background()
-	if err := d.user.SaveUser(ctx, user); err != nil {
-		fmt.Printf("error occured while saving user: %s\n", err.Error())
+	usr, err := d.user.SaveUser(ctx, user.ToValue())
+	if err != nil {
+		d.log.Log("error", "error occured while saving user", logger.WithErrAttr(err))
+		return usr, err
 	}
-	fmt.Println("user successfully saved")
+	d.log.Log("info", "user successfully saved")
+	return usr, nil
 }
 
 func (d *DashboardService) DeleteUser(id int64) {
@@ -127,8 +135,18 @@ func (d *DashboardService) SendOTP(email string) error {
 	return nil
 }
 
-func (d *DashboardService) VerifyUser(code models.OTPCode) error {
-	/*TODO*/
+func (d *DashboardService) VerifyUser(user_id int64, code models.OTPCode) error {
+	ctx := context.Background()
+	if err := d.otp.VerifyOTP(ctx, user_id, code); err != nil {
+		d.log.Log("error", "error occured while verifying otp code", logger.WithErrAttr(err))
+		return err
+	}
+	d.log.Log("info", "otp code successfully verified")
+	if err := d.user.VerifyUser(ctx, models.Id(user_id)); err != nil {
+		d.log.Log("error", "error occured while verifying user", logger.WithErrAttr(err))
+		return err
+	}
+	d.log.Log("info", "user successfully verified")
 	return nil
 }
 
@@ -150,7 +168,7 @@ func (d *DashboardService) GetAuth() *auth.Auth {
 
 func (d *DashboardService) Run() {
 	d.state = Running
-	d.log = logger.New()
+	d.log = logger.New(d.cfg.Env)
 	d.state = Ready
 }
 

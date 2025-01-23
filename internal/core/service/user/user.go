@@ -82,9 +82,21 @@ func (u *UserService) GetUserByEmail(ctx context.Context, email string) (models.
 	return dbo.ToValue(), nil
 }
 
-func (u *UserService) SaveUser(ctx context.Context, user models.User) error {
+func (u *UserService) VerifyUser(ctx context.Context, user_id models.Id) error {
+	err := u.repo.SetUserState(ctx, int64(user_id), models.Verified)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UserService) SaveUser(ctx context.Context, user models.User) (models.User, error) {
 	dbo := dto.ToUserDbo(user)
-	return u.repo.SaveUser(ctx, dbo)
+	updated_dbo, err := u.repo.SaveUser(ctx, dbo)
+	if err != nil {
+		return models.User{}, err
+	}
+	return updated_dbo.ToValue(), nil
 }
 
 func (u *UserService) DeleteUser(ctx context.Context, id int64) error {

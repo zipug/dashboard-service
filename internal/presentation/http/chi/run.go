@@ -10,6 +10,7 @@ import (
 	getuserinfo "dashboard/internal/presentation/http/chi/handlers/get_user_info"
 	"dashboard/internal/presentation/http/chi/handlers/login"
 	"dashboard/internal/presentation/http/chi/handlers/register"
+	saveuserinfo "dashboard/internal/presentation/http/chi/handlers/save_user_info"
 	sendotp "dashboard/internal/presentation/http/chi/handlers/send_otp"
 	verifyuser "dashboard/internal/presentation/http/chi/handlers/verify_user"
 	logger_middleware "dashboard/pkg/middlewares/logger"
@@ -65,7 +66,7 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 		middleware.RequestID,
 		middleware.Recoverer,
 		middleware.URLFormat,
-		logger_middleware.New(),
+		logger_middleware.New(log.GetLogger()),
 	)
 	api := cfg.Server.DefaultApi
 
@@ -83,6 +84,7 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 				r.Get("/all", getallusers.GetAllUsers(app, log))
 				r.Get("/me", getuserinfo.GetUserInfo(app, log, auth))
 				r.Post("/verify", verifyuser.Verify(app, log, auth))
+				r.Post("/update", saveuserinfo.SaveUser(app, log, auth))
 			})
 
 			r.Group(func(r chi.Router) {

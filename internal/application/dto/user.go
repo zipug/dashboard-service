@@ -22,6 +22,14 @@ type UserDto struct {
 	AvatarUrl      string       `json:"avatar_url,omitempty"`
 }
 
+type UpdateUserDto struct {
+	Id        int64  `json:"id,omitempty"`
+	Email     string `json:"email,omitempty"`
+	Name      string `json:"name,omitempty"`
+	LastName  string `json:"lastname,omitempty"`
+	AvatarUrl string `json:"avatar_url,omitempty"`
+}
+
 type UserDbo struct {
 	Id        int64          `db:"id"`
 	State     models.State   `db:"state"`
@@ -56,6 +64,17 @@ func (dto *UserDto) ToValue() models.User {
 		RepeatPassword: models.Password(dto.RepeatPassword),
 		Name:           models.Name(dto.Name),
 		LastName:       models.LastName(dto.LastName),
+		AvatarUrl:      models.AvatarUrl(dto.AvatarUrl),
+	}
+}
+
+func (dto *UpdateUserDto) ToValue() models.User {
+	return models.User{
+		Id:        models.Id(dto.Id),
+		Email:     models.Email(dto.Email),
+		Name:      models.Name(dto.Name),
+		LastName:  models.LastName(dto.LastName),
+		AvatarUrl: models.AvatarUrl(dto.AvatarUrl),
 	}
 }
 
@@ -95,6 +114,7 @@ func ToSafeUserDto(user models.User) SafeUserDto {
 
 func ToUserDbo(user models.User) UserDbo {
 	return UserDbo{
+		Id:        int64(user.Id),
 		State:     user.State,
 		Email:     string(user.Email),
 		Password:  string(user.Password),

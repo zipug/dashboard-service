@@ -1,14 +1,16 @@
 package logger
 
 import (
+	"dashboard/internal/common/service/config"
 	"fmt"
 	"os"
 
 	"github.com/rs/zerolog"
+	"go.elastic.co/ecszerolog"
 )
 
 type Logger struct {
-	log *zerolog.Logger
+	zrlog *zerolog.Logger
 }
 
 type LoggerEvent func(*zerolog.Event)
@@ -66,18 +68,26 @@ func WithErrAttr(value error) LoggerEvent {
 	}
 }
 
-func New() *Logger {
-	output := zerolog.ConsoleWriter{Out: os.Stdout}
-	log := zerolog.New(output).
-		With().
-		Timestamp().
-		Logger().
-		Level(zerolog.DebugLevel)
-	return &Logger{&log}
+func New(env config.ENV) *Logger {
+	switch env {
+	default:
+		fallthrough
+	case config.ENV_DEVELOPMENT:
+		output := zerolog.ConsoleWriter{Out: os.Stdout}
+		log := zerolog.New(output).
+			With().
+			Timestamp().
+			Logger().
+			Level(zerolog.DebugLevel)
+		return &Logger{zrlog: &log}
+	case config.ENV_PRODUCTION:
+		elk := ecszerolog.New(os.Stdout)
+		return &Logger{zrlog: &elk}
+	}
 }
 
 func (log *Logger) Log(action LoggerAction, message string, opts ...LoggerEvent) {
-	l := log.log
+	l := log.zrlog
 	var event *zerolog.Event
 	switch action {
 	case Info:
@@ -98,4 +108,8 @@ func (log *Logger) Log(action LoggerAction, message string, opts ...LoggerEvent)
 	}
 
 	event.Msg(message)
+}
+
+func (log *Logger) GetLogger() *zerolog.Logger {
+	return log.zrlog
 }

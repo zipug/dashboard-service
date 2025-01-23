@@ -4,6 +4,7 @@ import (
 	"context"
 	"dashboard/internal/application/dto"
 	"dashboard/internal/common/service/config"
+	"dashboard/internal/core/models"
 	pu "dashboard/pkg/postgres_utils"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ var (
 	ErrConnect              = errors.New("could not connect to database")
 	ErrPing                 = errors.New("could not ping database")
 	ErrRegister             = errors.New("could not register user")
+	ErrUpdate               = errors.New("could not update user")
 	ErrPqEmailAlreadyExists = errors.New("pq: duplicate key value violates unique constraint \"users_email_unique\"")
 	ErrEmailAlreadyExists   = errors.New("email already exists")
 	ErrGetUserById          = errors.New("could not get user by id")
@@ -191,8 +193,53 @@ func (repo *PostgresRepository) GetAllUsers(ctx context.Context) ([]dto.UserDbo,
 	return usr_rows, nil
 }
 
-func (repo *PostgresRepository) SaveUser(ctx context.Context, user dto.UserDbo) error {
+func (repo *PostgresRepository) SetUserState(ctx context.Context, id int64, state models.State) error {
+	_, err := pu.Dispatch[dto.UserDbo](
+		ctx,
+		repo.db,
+		`
+		UPDATE users
+		SET state = $1::text
+		WHERE id = $2::bigint
+		  AND deleted_at IS NULL;
+		`,
+		string(state),
+		id,
+	)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (repo *PostgresRepository) SaveUser(ctx context.Context, user dto.UserDbo) (*dto.UserDbo, error) {
+	usr_rows, err := pu.Dispatch[dto.UserDbo](
+		ctx,
+		repo.db,
+		`
+		UPDATE users
+		SET email = $1::text,
+		    name = $2::text,
+		    lastname = $3::text,
+		    avatar_url = $4::text
+		WHERE id = $5::bigint
+		  AND deleted_at IS NULL
+		RETURNING *;
+		`,
+		user.Email,
+		user.Name,
+		user.LastName,
+		user.AvatarUrl,
+		user.Id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(usr_rows) == 0 {
+		return nil, ErrUpdate
+	}
+	usr := usr_rows[0]
+	return &usr, nil
 }
 
 func (repo *PostgresRepository) DeleteUser(ctx context.Context, id int64) error {
