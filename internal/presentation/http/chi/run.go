@@ -93,6 +93,15 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 				r.Post("/send-code", sendotp.SendOTP(app, log))
 			})
 		})
+
+		r.Route("/roles", func(r chi.Router) {
+			r.Group(func(r chi.Router) {
+				r.Use(jwtauth.Verifier(auth.GetTokenAuth()))
+				r.Use(jwtauth.Authenticator(auth.GetTokenAuth()))
+			})
+			r.Group(func(r chi.Router) {
+			})
+		})
 	})
 
 	return &HttpServer{
