@@ -5,14 +5,14 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	logger "dashboard/internal/common/service/logger/zerolog"
-	getallusers "dashboard/internal/presentation/http/chi/handlers/get_all_users"
-	getuserbyid "dashboard/internal/presentation/http/chi/handlers/get_user_by_id"
-	getuserinfo "dashboard/internal/presentation/http/chi/handlers/get_user_info"
-	"dashboard/internal/presentation/http/chi/handlers/login"
-	"dashboard/internal/presentation/http/chi/handlers/register"
-	saveuserinfo "dashboard/internal/presentation/http/chi/handlers/save_user_info"
-	sendotp "dashboard/internal/presentation/http/chi/handlers/send_otp"
-	verifyuser "dashboard/internal/presentation/http/chi/handlers/verify_user"
+	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
+	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
+	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
+	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
+	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
+	updateroleperms "dashboard/internal/presentation/http/chi/handlers/roles/update_role_permissions"
+	"dashboard/internal/presentation/http/chi/routers/users"
+	"dashboard/pkg/middlewares/can"
 	logger_middleware "dashboard/pkg/middlewares/logger"
 	"fmt"
 	"net/http"
@@ -76,28 +76,39 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 		})
 
 		r.Route("/users", func(r chi.Router) {
-			r.Group(func(r chi.Router) {
-				r.Use(jwtauth.Verifier(auth.GetTokenAuth()))
-				r.Use(jwtauth.Authenticator(auth.GetTokenAuth()))
-
-				r.Get("/{id}", getuserbyid.GetUserById(app, log))
-				r.Get("/all", getallusers.GetAllUsers(app, log))
-				r.Get("/me", getuserinfo.GetUserInfo(app, log, auth))
-				r.Post("/verify", verifyuser.Verify(app, log, auth))
-				r.Post("/update", saveuserinfo.SaveUser(app, log, auth))
-			})
-
-			r.Group(func(r chi.Router) {
-				r.Post("/register", register.RegisterUser(app, log, auth, cfg.AccessTokenExpiration))
-				r.Post("/login", login.LoginUser(app, log, auth, cfg.AccessTokenExpiration))
-				r.Post("/send-code", sendotp.SendOTP(app, log))
-			})
+			users.UsersRouter(r)(app, log, auth, cfg)
 		})
 
 		r.Route("/roles", func(r chi.Router) {
 			r.Group(func(r chi.Router) {
 				r.Use(jwtauth.Verifier(auth.GetTokenAuth()))
 				r.Use(jwtauth.Authenticator(auth.GetTokenAuth()))
+				r.Group(func(r chi.Router) {
+					guard := can.NewGuard()
+					guard.AddVerifier(app.ValidateUserPermissions)
+					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:read"))
+					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
+					r.Get("/all", getallroles.GetAllRoles(app, log))
+				})
+				r.Group(func(r chi.Router) {
+					guard := can.NewGuard()
+					guard.AddVerifier(app.ValidateUserPermissions)
+					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:create"))
+					r.Post("/create", createrole.CreateRole(app, log))
+				})
+				r.Group(func(r chi.Router) {
+					guard := can.NewGuard()
+					guard.AddVerifier(app.ValidateUserPermissions)
+					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:update"))
+					r.Post("/update", updaterole.UpdateRole(app, log))
+					r.Patch("/update-permissions", updateroleperms.UpdateRolePerms(app, log))
+				})
+				r.Group(func(r chi.Router) {
+					guard := can.NewGuard()
+					guard.AddVerifier(app.ValidateUserPermissions)
+					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:delete"))
+					r.Delete("/{id}", deleterolebyid.DeleteRole(app, log))
+				})
 			})
 			r.Group(func(r chi.Router) {
 			})

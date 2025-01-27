@@ -99,6 +99,15 @@ func (u *UserService) SaveUser(ctx context.Context, user models.User) (models.Us
 	return updated_dbo.ToValue(), nil
 }
 
+func (u *UserService) ValidateUserPermissions(ctx context.Context, user_id int64, perm string) error {
+	action := models.ToPermission(perm)
+	return u.repo.ValidateUserPermissions(ctx, user_id, action)
+}
+
+func (u *UserService) GrantRoleToUser(ctx context.Context, user_id int64, role_id int64) error {
+	return u.repo.GrantRoleToUser(ctx, user_id, role_id)
+}
+
 func (u *UserService) DeleteUser(ctx context.Context, id int64) error {
 	return u.repo.DeleteUser(ctx, id)
 }

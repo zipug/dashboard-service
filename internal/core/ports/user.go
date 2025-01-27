@@ -14,6 +14,8 @@ type UserService interface {
 	GetAllUsers(context.Context) ([]models.User, error)
 	VerifyUser(context.Context, models.Id) error
 	SaveUser(context.Context, models.User) (models.User, error)
+	ValidateUserPermissions(context.Context, int64, string) error
+	GrantRoleToUser(context.Context, int64, int64) error
 	DeleteUser(context.Context, int64) error
 }
 
@@ -24,6 +26,8 @@ type UserRepository interface {
 	GetAllUsers(context.Context) ([]dto.UserDbo, error)
 	SetUserState(context.Context, int64, models.State) error
 	SaveUser(context.Context, dto.UserDbo) (*dto.UserDbo, error)
+	ValidateUserPermissions(context.Context, int64, models.Permission) error
+	GrantRoleToUser(context.Context, int64, int64) error
 	DeleteUser(context.Context, int64) error
 }
 

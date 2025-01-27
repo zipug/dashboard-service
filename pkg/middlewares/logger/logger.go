@@ -10,14 +10,6 @@ import (
 
 func New(log *zerolog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		// output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-
-		/*log := zerolog.New(output).
-		With().
-		Timestamp().
-		Logger().
-		Level(zerolog.DebugLevel)
-		*/
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			entry := log.With().
 				Str("method", r.Method).

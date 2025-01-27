@@ -1,14 +1,10 @@
 package application
 
 import (
-	"context"
-	"dashboard/internal/application/dto"
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	logger "dashboard/internal/common/service/logger/zerolog"
-	"dashboard/internal/core/models"
 	"dashboard/internal/core/ports"
-	"fmt"
 )
 
 type State int
@@ -25,129 +21,29 @@ type DashboardService struct {
 	user  ports.UserService
 	auth  *auth.Auth
 	otp   ports.OTPService
+	role  ports.RolesService
 	log   *logger.Logger
 	state State
 }
 
-func NewDashboardService(cfg *config.AppConfig, user ports.UserService, auth *auth.Auth, otp ports.OTPService) *DashboardService {
+func NewDashboardService(
+	cfg *config.AppConfig,
+	user ports.UserService,
+	auth *auth.Auth,
+	otp ports.OTPService,
+	role ports.RolesService,
+) *DashboardService {
 	d := &DashboardService{
 		cfg:  cfg,
 		user: user,
 		auth: auth,
 		otp:  otp,
+		role: role,
 	}
 
 	d.state = Created
 
 	return d
-}
-
-func (d *DashboardService) GetUserById(id int64) (models.User, error) {
-	d.log.Log("info", fmt.Sprintf("getting user by id: %d", id))
-	ctx := context.Background()
-	usr, err := d.user.GetUserById(ctx, id)
-	if err != nil {
-		d.log.Log("error", fmt.Sprintf("error while getting user by id: %d", id), logger.WithErrAttr(err))
-		return usr, err
-	}
-	d.log.Log("info", "user successfully get", logger.WithInt64Attr("user_id", id))
-	return usr, nil
-}
-
-func (d *DashboardService) RegisterUser(user dto.UserDto) (int64, error) {
-	d.log.Log("info", "registering user")
-	ctx := context.Background()
-	id, err := d.user.RegisterUser(ctx, user.ToValue())
-	if err != nil {
-		d.log.Log("error", "error while registering user", logger.WithErrAttr(err))
-		return int64(dto.BadUserId), err
-	}
-	d.log.Log("info", "user successfully registered", logger.WithInt64Attr("user_id", id))
-	return id, nil
-}
-
-func (d *DashboardService) LoginUser(user dto.UserDto) (models.User, error) {
-	d.log.Log("info", "login user")
-	ctx := context.Background()
-	usr, err := d.user.LoginUser(ctx, user.ToValue())
-	if err != nil {
-		d.log.Log("error", "error while loginnig user", logger.WithErrAttr(err))
-		return usr, err
-	}
-	d.log.Log("info", "user successfully logined", logger.WithInt64Attr("user_id", int64(usr.Id)))
-	return usr, nil
-}
-
-func (d *DashboardService) GetAllUsers() ([]models.User, error) {
-	d.log.Log("info", "get all users")
-	ctx := context.Background()
-	users, err := d.user.GetAllUsers(ctx)
-	if err != nil {
-		d.log.Log("error", "error while fetching users", logger.WithErrAttr(err))
-		return users, err
-	}
-	d.log.Log("info", "users successfully fetched", logger.WithInt64Attr("user_count", int64(len(users))))
-	return users, nil
-}
-
-func (d *DashboardService) SaveUser(user dto.UpdateUserDto) (models.User, error) {
-	d.log.Log(
-		"info",
-		"saving user",
-		logger.WithStrAttr("email", user.Email),
-		logger.WithInt64Attr("id", int64(user.Id)),
-	)
-	ctx := context.Background()
-	usr, err := d.user.SaveUser(ctx, user.ToValue())
-	if err != nil {
-		d.log.Log("error", "error occured while saving user", logger.WithErrAttr(err))
-		return usr, err
-	}
-	d.log.Log("info", "user successfully saved")
-	return usr, nil
-}
-
-func (d *DashboardService) DeleteUser(id int64) {
-	fmt.Println("deleting user")
-	ctx := context.Background()
-	if err := d.user.DeleteUser(ctx, id); err != nil {
-		fmt.Printf("error occured while deleting user with id: %d, %s\n", id, err.Error())
-	}
-	fmt.Println("user successfully deleted")
-}
-
-func (d *DashboardService) SendOTP(email string) error {
-	ctx := context.Background()
-	user, err := d.user.GetUserByEmail(ctx, email)
-	if err != nil {
-		d.log.Log("error", "error occured while getting user by email", logger.WithStrAttr("email", email), logger.WithErrAttr(err))
-		return err
-	}
-	if err := d.otp.SendOTP(ctx, int64(user.Id), email, string(user.Name)); err != nil {
-		d.log.Log("error", "error occured while sending otp code to email", logger.WithErrAttr(err))
-		return err
-	}
-	d.log.Log(
-		"info",
-		"otp code successfully sended to user email",
-		logger.WithStrAttr("email", email),
-	)
-	return nil
-}
-
-func (d *DashboardService) VerifyUser(user_id int64, code models.OTPCode) error {
-	ctx := context.Background()
-	if err := d.otp.VerifyOTP(ctx, user_id, code); err != nil {
-		d.log.Log("error", "error occured while verifying otp code", logger.WithErrAttr(err))
-		return err
-	}
-	d.log.Log("info", "otp code successfully verified")
-	if err := d.user.VerifyUser(ctx, models.Id(user_id)); err != nil {
-		d.log.Log("error", "error occured while verifying user", logger.WithErrAttr(err))
-		return err
-	}
-	d.log.Log("info", "user successfully verified")
-	return nil
 }
 
 func (d *DashboardService) GetConfig() *config.AppConfig {
