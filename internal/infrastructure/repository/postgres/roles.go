@@ -160,28 +160,43 @@ func (repo *PostgresRepository) UpdateRole(ctx context.Context, role dto.RolesDb
 }
 
 func (repo *PostgresRepository) UpdateRolePermissions(ctx context.Context, role_id int64, perms []dto.RolePermissionDbo) error {
-	_, err := pu.Dispatch[dto.RolePermissionDbo](
-		ctx,
-		repo.db,
-		`
-		UPDATE role_permissions rp
-		SET permission_id = t.permission_id,
-		do_create = t.do_create,
-		do_read = t.do_read,
-		do_update = t.do_update,
-		do_delete = t.do_delete
-		FROM (
-			--)
-			VALUES(:permission_id, :do_create, :do_read, :do_update, :do_delete)
-		) AS t (permission_id, do_create, do_read, do_update, do_delete)
-		WHERE rp.role_id = $1::bigint;
-		`,
-		role_id,
-		perms,
-	)
-	if err != nil {
-		return err
+	var errs []error
+	tx := repo.db.MustBegin()
+UpdateLoop:
+	for _, perm := range perms {
+		_, err := pu.DispatchTx[dto.RolePermissionDbo](
+			ctx,
+			tx,
+			`
+			UPDATE role_permissions rp
+			SET do_create = $1::bool,
+					do_read = $2::bool,
+					do_update = $3::bool,
+					do_delete = $4::bool
+			FROM permissions p
+				WHERE p.name = $5::text
+					AND rp.role_id = $6::bigint
+					AND rp.permission_id = p.id;
+			`,
+			perm.DoCreate,
+			perm.DoRead,
+			perm.DoUpdate,
+			perm.DoDelete,
+			perm.Name,
+			role_id,
+		)
+		if err != nil {
+			errs = append(errs, err)
+			tx.Rollback()
+			break UpdateLoop
+		}
 	}
+
+	if len(errs) > 0 {
+		return ErrUpdatePerms
+	}
+	tx.Commit()
+
 	return nil
 }
 

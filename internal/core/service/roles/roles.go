@@ -5,6 +5,7 @@ import (
 	"dashboard/internal/application/dto"
 	"dashboard/internal/core/models"
 	"dashboard/internal/core/ports"
+	"database/sql"
 )
 
 type RolesService struct {
@@ -59,6 +60,7 @@ func (r *RolesService) UpdateRolePermissions(ctx context.Context, role_id int64,
 	for _, perm := range perms {
 		permsDbo = append(permsDbo, dto.RolePermissionDbo{
 			PermissionId: perm.Id,
+			Name:         sql.NullString{String: perm.Name, Valid: true},
 			DoCreate:     perm.Create,
 			DoRead:       perm.Read,
 			DoUpdate:     perm.Update,

@@ -11,7 +11,7 @@ type PermissionDto struct {
 	DoCreate bool   `json:"do_create,omitempty"`
 	DoUpdate bool   `json:"do_update,omitempty"`
 	DoRead   bool   `json:"do_read,omitempty"`
-	DoDelete bool   `json:"dodelete,omitempty"`
+	DoDelete bool   `json:"do_delete,omitempty"`
 }
 
 type RoleDto struct {
@@ -32,13 +32,13 @@ type RolesDbo struct {
 }
 
 type RolePermissionDbo struct {
-	RoleId       int64          `db:"role_id,omitempty" json:"role_id,omitempty"`
-	PermissionId int64          `db:"permission_id,omitempty" json:"permission_id,omitempty"`
-	Name         sql.NullString `db:"name,omitempty" json:"name,omitempty"`
-	DoCreate     bool           `db:"do_create" json:"do_create"`
-	DoRead       bool           `db:"do_read" json:"do_read"`
-	DoUpdate     bool           `db:"do_update" json:"do_update"`
-	DoDelete     bool           `db:"do_delete" json:"do_delete"`
+	RoleId       int64          `db:"role_id,omitempty"`
+	PermissionId int64          `db:"permission_id,omitempty"`
+	Name         sql.NullString `db:"name,omitempty"`
+	DoCreate     bool           `db:"do_create"`
+	DoRead       bool           `db:"do_read"`
+	DoUpdate     bool           `db:"do_update"`
+	DoDelete     bool           `db:"do_delete"`
 }
 
 func ToRoleDto(r models.Role) RoleDto {

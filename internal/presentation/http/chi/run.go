@@ -5,14 +5,13 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	logger "dashboard/internal/common/service/logger/zerolog"
-	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
-	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
-	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
-	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
-	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
-	updateroleperms "dashboard/internal/presentation/http/chi/handlers/roles/update_role_permissions"
+	"dashboard/internal/presentation/http/chi/routers/articles"
+	"dashboard/internal/presentation/http/chi/routers/attachments"
+	"dashboard/internal/presentation/http/chi/routers/bots"
+	"dashboard/internal/presentation/http/chi/routers/projects"
+	"dashboard/internal/presentation/http/chi/routers/reports"
+	"dashboard/internal/presentation/http/chi/routers/roles"
 	"dashboard/internal/presentation/http/chi/routers/users"
-	"dashboard/pkg/middlewares/can"
 	logger_middleware "dashboard/pkg/middlewares/logger"
 	"fmt"
 	"net/http"
@@ -78,40 +77,23 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 		r.Route("/users", func(r chi.Router) {
 			users.UsersRouter(r)(app, log, auth, cfg)
 		})
-
 		r.Route("/roles", func(r chi.Router) {
-			r.Group(func(r chi.Router) {
-				r.Use(jwtauth.Verifier(auth.GetTokenAuth()))
-				r.Use(jwtauth.Authenticator(auth.GetTokenAuth()))
-				r.Group(func(r chi.Router) {
-					guard := can.NewGuard()
-					guard.AddVerifier(app.ValidateUserPermissions)
-					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:read"))
-					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
-					r.Get("/all", getallroles.GetAllRoles(app, log))
-				})
-				r.Group(func(r chi.Router) {
-					guard := can.NewGuard()
-					guard.AddVerifier(app.ValidateUserPermissions)
-					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:create"))
-					r.Post("/create", createrole.CreateRole(app, log))
-				})
-				r.Group(func(r chi.Router) {
-					guard := can.NewGuard()
-					guard.AddVerifier(app.ValidateUserPermissions)
-					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:update"))
-					r.Post("/update", updaterole.UpdateRole(app, log))
-					r.Patch("/update-permissions", updateroleperms.UpdateRolePerms(app, log))
-				})
-				r.Group(func(r chi.Router) {
-					guard := can.NewGuard()
-					guard.AddVerifier(app.ValidateUserPermissions)
-					r.Use(guard.Can(auth.GetTokenAuth(), "roles_feature:delete"))
-					r.Delete("/{id}", deleterolebyid.DeleteRole(app, log))
-				})
-			})
-			r.Group(func(r chi.Router) {
-			})
+			roles.RolesRouter(r)(app, log, auth, cfg)
+		})
+		r.Route("/projects", func(r chi.Router) {
+			projects.ProjectsRouter(r)(app, log, auth, cfg)
+		})
+		r.Route("/articles", func(r chi.Router) {
+			articles.ArticlesRouter(r)(app, log, auth, cfg)
+		})
+		r.Route("/attachments", func(r chi.Router) {
+			attachments.AttachmentsRouter(r)(app, log, auth, cfg)
+		})
+		r.Route("/reports", func(r chi.Router) {
+			reports.ReportsRouter(r)(app, log, auth, cfg)
+		})
+		r.Route("/bots", func(r chi.Router) {
+			bots.BotsRouter(r)(app, log, auth, cfg)
 		})
 	})
 
