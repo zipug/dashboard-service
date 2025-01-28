@@ -1,4 +1,4 @@
-package updaterole
+package updateproject
 
 import (
 	"dashboard/internal/application/dto"
@@ -11,30 +11,30 @@ import (
 )
 
 type DashboardService interface {
-	UpdateRole(models.Role) (models.Role, error)
+	UpdateProject(models.Project) (models.Project, error)
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func UpdateRole(app DashboardService, log Logger) http.HandlerFunc {
+func UpdateProject(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 
-		var req dto.RoleDto
+		var req dto.ProjectDto
 		if err := render.DecodeJSON(r.Body, &req); err != nil {
 			log.Log("error", "error while decoding request body", logger.WithErrAttr(err))
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while decoding request body"}})
 			return
 		}
-		role, err := app.UpdateRole(req.ToValue())
+		project, err := app.UpdateProject(req.ToValue())
 		if err != nil {
-			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to save role info"}}
+			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to save project info"}}
 			render.JSON(w, r, resp)
 			return
 		}
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToRoleDto(role)})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToProjectDto(project)})
 	}
 }

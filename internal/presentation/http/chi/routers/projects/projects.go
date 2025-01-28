@@ -5,11 +5,11 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
-	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
-	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
-	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
-	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
-	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
+	createproject "dashboard/internal/presentation/http/chi/handlers/projects/create_project"
+	deleteprojectbyid "dashboard/internal/presentation/http/chi/handlers/projects/delete_project_by_id"
+	getallprojects "dashboard/internal/presentation/http/chi/handlers/projects/get_all_projects"
+	getprojectbyid "dashboard/internal/presentation/http/chi/handlers/projects/get_project_by_id"
+	updateproject "dashboard/internal/presentation/http/chi/handlers/projects/update_project"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -36,18 +36,18 @@ func ProjectsRouter(r chi.Router) func(
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:read")).
 				Group(func(r chi.Router) {
-					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
-					r.Get("/all", getallroles.GetAllRoles(app, log))
+					r.Get("/{id}", getprojectbyid.GetProjectById(app, log))
+					r.Get("/all", getallprojects.GetAllProjects(app, log))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:create")).
-				Post("/create", createrole.CreateRole(app, log))
+				Post("/create", createproject.CreateProject(app, log))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:update")).
-				Post("/update", updaterole.UpdateRole(app, log))
+				Post("/update", updateproject.UpdateProject(app, log))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:delete")).
-				Delete("/{id}", deleterolebyid.DeleteRole(app, log))
+				Delete("/{id}", deleteprojectbyid.DeleteProject(app, log))
 		})
 		return r
 	}

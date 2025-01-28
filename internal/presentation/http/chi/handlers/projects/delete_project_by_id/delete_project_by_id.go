@@ -1,28 +1,27 @@
-package getrolebyid
+package deleteprojectbyid
 
 import (
-	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
-	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type DashboardService interface {
-	GetRoleById(int64) (models.Role, error)
+	DeleteProject(int64) error
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func GetRoleById(app DashboardService, log Logger) http.HandlerFunc {
+func DeleteProject(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		query_id := chi.URLParam(r, "id")
 		if query_id == "" {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
@@ -33,15 +32,11 @@ func GetRoleById(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		role, err := app.GetRoleById(id)
-		if err != nil {
-			errs := strings.Split(err.Error(), "\n")
-			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
+		if err := app.DeleteProject(id); err != nil {
+			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to delete role"}}
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToRoleDto(role)})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success})
 	}
 }

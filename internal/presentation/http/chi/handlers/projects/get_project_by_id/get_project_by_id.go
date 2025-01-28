@@ -1,7 +1,9 @@
-package deleteuserbyid
+package getprojectbyid
 
 import (
+	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
+	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
 	"strconv"
@@ -12,14 +14,14 @@ import (
 )
 
 type DashboardService interface {
-	DeleteUserById(int64) error
+	GetProjectById(int64) (models.ProjectsContent, error)
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func DeleteUserById(app DashboardService, log Logger) http.HandlerFunc {
+func GetProjectById(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query_id := chi.URLParam(r, "id")
 		if query_id == "" {
@@ -31,7 +33,8 @@ func DeleteUserById(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		if err := app.DeleteUserById(id); err != nil {
+		project, err := app.GetProjectById(id)
+		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)
@@ -39,6 +42,6 @@ func DeleteUserById(app DashboardService, log Logger) http.HandlerFunc {
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		render.JSON(w, r, handlers.Response{Status: handlers.Success})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToProjectContentDto(project)})
 	}
 }

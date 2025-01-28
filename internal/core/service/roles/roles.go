@@ -16,8 +16,8 @@ func NewRolesService(repo ports.RoleRepository) *RolesService {
 	return &RolesService{repo: repo}
 }
 
-func (r *RolesService) GetRoleById(ctx context.Context, user_id int64) (models.Role, error) {
-	roleDbo, err := r.repo.GetRoleById(ctx, user_id)
+func (r *RolesService) GetRoleById(ctx context.Context, role_id int64) (models.Role, error) {
+	roleDbo, err := r.repo.GetRoleById(ctx, role_id)
 	if err != nil {
 		return models.Role{}, err
 	}
@@ -70,6 +70,6 @@ func (r *RolesService) UpdateRolePermissions(ctx context.Context, role_id int64,
 	return r.repo.UpdateRolePermissions(ctx, role_id, permsDbo)
 }
 
-func (r *RolesService) DeleteRole(ctx context.Context, user_id int64) error {
-	return r.repo.DeleteRole(ctx, user_id)
+func (r *RolesService) DeleteRole(ctx context.Context, role_id int64) error {
+	return r.repo.DeleteRole(ctx, role_id)
 }

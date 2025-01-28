@@ -158,7 +158,7 @@ func (repo *PostgresRepository) SaveUser(ctx context.Context, user dto.UserDbo) 
 		    name = $2::text,
 		    lastname = $3::text,
 		    avatar_url = $4::text,
-				update_at = NOW()
+			  update_at = NOW()
 		WHERE id = $5::bigint
 		  AND deleted_at IS NULL
 		RETURNING *;
