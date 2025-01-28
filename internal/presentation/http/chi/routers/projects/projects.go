@@ -41,7 +41,7 @@ func ProjectsRouter(r chi.Router) func(
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:create")).
-				Post("/create", createproject.CreateProject(app, log))
+				Post("/create", createproject.CreateProject(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:update")).
 				Post("/update", updateproject.UpdateProject(app, log))

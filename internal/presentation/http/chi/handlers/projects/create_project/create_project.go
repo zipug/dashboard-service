@@ -19,8 +19,19 @@ type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func CreateProject(app DashboardService, log Logger) http.HandlerFunc {
+type Auth interface {
+	GetClaims(*http.Request) map[string]interface{}
+}
+
+func CreateProject(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		authClaims := auth.GetClaims(r)
+		authUserId, ok := authClaims["user_id"].(float64)
+		if !ok {
+			log.Log("error", "invalid user_id in jwt token")
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
+			return
+		}
 		var req dto.ProjectDto
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
@@ -28,7 +39,9 @@ func CreateProject(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while decoding request body"}})
 			return
 		}
-		project_id, err := app.CreateProject(req.ToValue())
+		payload := req.ToValue()
+		payload.Id = int64(authUserId)
+		project_id, err := app.CreateProject(payload)
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}

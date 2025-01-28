@@ -33,7 +33,7 @@ func DeleteProject(app DashboardService, log Logger) http.HandlerFunc {
 			return
 		}
 		if err := app.DeleteProject(id); err != nil {
-			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to delete role"}}
+			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to delete project"}}
 			render.JSON(w, r, resp)
 			return
 		}
