@@ -5,6 +5,7 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
+	uploadarticle "dashboard/internal/presentation/http/chi/handlers/articles/upload_article"
 	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
 	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
 	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
@@ -41,7 +42,10 @@ func ArticlesRouter(r chi.Router) func(
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "articles_feature:create")).
-				Post("/create", createrole.CreateRole(app, log))
+				Group(func(r chi.Router) {
+					r.Post("/create", createrole.CreateRole(app, log))
+					r.Post("/upload", uploadarticle.UploadArticle(app, log))
+				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "articles_feature:update")).
 				Post("/update", updaterole.UpdateRole(app, log))
