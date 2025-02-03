@@ -5,12 +5,11 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
-	uploadarticle "dashboard/internal/presentation/http/chi/handlers/articles/upload_article"
-	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
-	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
-	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
-	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
-	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
+	createarticle "dashboard/internal/presentation/http/chi/handlers/articles/create_article"
+	deletearticlebyid "dashboard/internal/presentation/http/chi/handlers/articles/delete_article_by_id"
+	getallarticles "dashboard/internal/presentation/http/chi/handlers/articles/get_all_articles"
+	getarticlebyid "dashboard/internal/presentation/http/chi/handlers/articles/get_article_by_id"
+	updatearticle "dashboard/internal/presentation/http/chi/handlers/articles/update_article"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -37,21 +36,20 @@ func ArticlesRouter(r chi.Router) func(
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "articles_feature:read")).
 				Group(func(r chi.Router) {
-					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
-					r.Get("/all", getallroles.GetAllRoles(app, log))
+					r.Get("/{id}", getarticlebyid.GetArticleById(app, log, auth))
+					r.Get("/all", getallarticles.GetAllArticles(app, log, auth))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "articles_feature:create")).
 				Group(func(r chi.Router) {
-					r.Post("/create", createrole.CreateRole(app, log))
-					r.Post("/upload", uploadarticle.UploadArticle(app, log))
+					r.Post("/create", createarticle.CreateArticle(app, log))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "articles_feature:update")).
-				Post("/update", updaterole.UpdateRole(app, log))
+				Post("/update", updatearticle.UpdateArticle(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "articles_feature:delete")).
-				Delete("/{id}", deleterolebyid.DeleteRole(app, log))
+				Delete("/{id}", deletearticlebyid.DeleteArticle(app, log, auth))
 		})
 		return r
 	}

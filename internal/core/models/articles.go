@@ -5,5 +5,6 @@ type Article struct {
 	Name        string
 	Description string
 	ArticleUrl  string
+	Content     string
 	ProjectId   int64
 }

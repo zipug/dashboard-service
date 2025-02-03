@@ -12,7 +12,7 @@ import (
 )
 
 type DashboardService interface {
-	UploadArticle() error
+	UploadArticle(string, string, string) error
 }
 
 type Logger interface {
@@ -25,6 +25,10 @@ func UploadArticle(app DashboardService, log Logger) http.HandlerFunc {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 
 		r.ParseMultipartForm(32 << 20)
+		if r.ContentLength > 32<<20 {
+			http.Error(w, "file too large", http.StatusRequestEntityTooLarge)
+			return
+		}
 		var buf bytes.Buffer
 		file, header, err := r.FormFile("file")
 		if err != nil {
@@ -43,8 +47,8 @@ func UploadArticle(app DashboardService, log Logger) http.HandlerFunc {
 			logger.WithStrAttr("name", name[0]),
 			logger.WithStrAttr("extension", name[1]),
 			logger.WithInt64Attr("size", int64(len(content))),
-			logger.WithStrAttr("content", content),
 		)
+		app.UploadArticle(name[0], name[1], content)
 
 		render.JSON(w, r, handlers.Response{Status: handlers.Success})
 	}

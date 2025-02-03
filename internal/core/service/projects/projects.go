@@ -15,8 +15,8 @@ func NewProjectsService(repo ports.ProjectRepository) *ProjectsService {
 	return &ProjectsService{repo: repo}
 }
 
-func (r *ProjectsService) GetProjectById(ctx context.Context, project_id int64) (models.ProjectsContent, error) {
-	ProjectDbo, err := r.repo.GetProjectById(ctx, project_id)
+func (r *ProjectsService) GetProjectById(ctx context.Context, project_id, user_id int64) (models.ProjectsContent, error) {
+	ProjectDbo, err := r.repo.GetProjectById(ctx, project_id, user_id)
 	if err != nil {
 		return models.ProjectsContent{}, err
 	}
@@ -24,8 +24,8 @@ func (r *ProjectsService) GetProjectById(ctx context.Context, project_id int64) 
 	return project, nil
 }
 
-func (r *ProjectsService) GetAllProjects(ctx context.Context) ([]models.ProjectsContent, error) {
-	ProjectsDbo, err := r.repo.GetAllProjects(ctx)
+func (r *ProjectsService) GetAllProjects(ctx context.Context, user_id int64) ([]models.ProjectsContent, error) {
+	ProjectsDbo, err := r.repo.GetAllProjects(ctx, user_id)
 	if err != nil {
 		return []models.ProjectsContent{}, err
 	}
@@ -45,15 +45,15 @@ func (r *ProjectsService) CreateProject(ctx context.Context, project models.Proj
 	return project_id, nil
 }
 
-func (r *ProjectsService) UpdateProject(ctx context.Context, project models.Project) (models.Project, error) {
+func (r *ProjectsService) UpdateProject(ctx context.Context, project models.Project, user_id int64) (models.Project, error) {
 	projectDbo := dto.ToProjectDbo(project)
-	newProject, err := r.repo.UpdateProject(ctx, projectDbo)
+	newProject, err := r.repo.UpdateProject(ctx, projectDbo, user_id)
 	if err != nil {
 		return models.Project{}, err
 	}
 	return newProject.ToValue(), nil
 }
 
-func (r *ProjectsService) DeleteProject(ctx context.Context, project_id int64) error {
-	return r.repo.DeleteProject(ctx, project_id)
+func (r *ProjectsService) DeleteProject(ctx context.Context, project_id, user_id int64) error {
+	return r.repo.DeleteProject(ctx, project_id, user_id)
 }

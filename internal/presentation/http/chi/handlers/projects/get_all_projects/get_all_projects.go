@@ -12,18 +12,29 @@ import (
 )
 
 type DashboardService interface {
-	GetAllProjects() ([]models.ProjectsContent, error)
+	GetAllProjects(int64) ([]models.ProjectsContent, error)
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func GetAllProjects(app DashboardService, log Logger) http.HandlerFunc {
+type Auth interface {
+	GetClaims(r *http.Request) map[string]interface{}
+}
+
+func GetAllProjects(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		projects, err := app.GetAllProjects()
+		authClaims := auth.GetClaims(r)
+		authUserId, ok := authClaims["user_id"].(float64)
+		if !ok {
+			log.Log("error", "invalid user_id in jwt token")
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
+			return
+		}
+		projects, err := app.GetAllProjects(int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}

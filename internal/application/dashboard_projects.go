@@ -6,10 +6,10 @@ import (
 	"dashboard/internal/core/models"
 )
 
-func (d *DashboardService) GetProjectById(project_id int64) (models.ProjectsContent, error) {
+func (d *DashboardService) GetProjectById(project_id int64, user_id int64) (models.ProjectsContent, error) {
 	ctx := context.Background()
 	d.log.Log("info", "getting project by id", logger.WithInt64Attr("project_id", project_id))
-	project, err := d.project.GetProjectById(ctx, project_id)
+	project, err := d.project.GetProjectById(ctx, project_id, user_id)
 	if err != nil {
 		d.log.Log("error", "error while getting project by id", logger.WithErrAttr(err))
 		return project, err
@@ -18,10 +18,10 @@ func (d *DashboardService) GetProjectById(project_id int64) (models.ProjectsCont
 	return project, nil
 }
 
-func (d *DashboardService) GetAllProjects() ([]models.ProjectsContent, error) {
+func (d *DashboardService) GetAllProjects(user_id int64) ([]models.ProjectsContent, error) {
 	ctx := context.Background()
 	d.log.Log("info", "getting all projects")
-	projects, err := d.project.GetAllProjects(ctx)
+	projects, err := d.project.GetAllProjects(ctx, user_id)
 	if err != nil {
 		d.log.Log("error", "error while fetching projects", logger.WithErrAttr(err))
 		return projects, err
@@ -46,22 +46,22 @@ func (d *DashboardService) CreateProject(project models.Project) (int64, error) 
 	return project_id, nil
 }
 
-func (d *DashboardService) UpdateProject(project models.Project) (models.Project, error) {
+func (d *DashboardService) UpdateProject(project models.Project, user_id int64) (models.Project, error) {
 	ctx := context.Background()
 	d.log.Log("info", "updating project", logger.WithInt64Attr("project_id", project.Id))
-	project, err := d.project.UpdateProject(ctx, project)
+	new_project, err := d.project.UpdateProject(ctx, project, user_id)
 	if err != nil {
 		d.log.Log("error", "error while updating project", logger.WithErrAttr(err))
-		return project, err
+		return new_project, err
 	}
 	d.log.Log("info", "project successfully updated", logger.WithStrAttr("project_id", project.Name))
-	return project, nil
+	return new_project, nil
 }
 
-func (d *DashboardService) DeleteProject(project_id int64) error {
+func (d *DashboardService) DeleteProject(project_id, user_id int64) error {
 	ctx := context.Background()
 	d.log.Log("info", "deleting project", logger.WithInt64Attr("project_id", project_id))
-	err := d.project.DeleteProject(ctx, project_id)
+	err := d.project.DeleteProject(ctx, project_id, user_id)
 	if err != nil {
 		d.log.Log("error", "error while deleting project", logger.WithErrAttr(err))
 		return err

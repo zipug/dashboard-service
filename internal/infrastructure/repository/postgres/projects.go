@@ -27,7 +27,7 @@ type GetProjectByIdParams struct {
 	Content     string         `db:"content" json:"content"`
 }
 
-func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id int64) (*dto.ProjectsContentDbo, error) {
+func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id, user_id int64) (*dto.ProjectsContentDbo, error) {
 	rows, err := repo.db.QueryxContext(
 		ctx,
 		`
@@ -41,16 +41,20 @@ func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id i
 						 'id', a.id,
 						 'name', a.name,
 						 'description', a.description,
-						 'article_url', a.article_url,
+						 'content', a.content,
 						 'project_id', a.project_id
 					 )::text AS content
 		FROM projects p
 		LEFT JOIN articles a ON p.id = a.project_id
+		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE p.id = $1::bigint
+		  AND (p.user_id = $2::bigint OR r.name = 'admin')
 		  AND p.deleted_at IS NULL
 		  AND a.deleted_at IS NULL;
 		`,
 		project_id,
+		user_id,
 	)
 	if err != nil {
 		return nil, err
@@ -88,7 +92,7 @@ func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id i
 	return &res, nil
 }
 
-func (repo *PostgresRepository) GetAllProjects(ctx context.Context) ([]dto.ProjectsContentDbo, error) {
+func (repo *PostgresRepository) GetAllProjects(ctx context.Context, user_id int64) ([]dto.ProjectsContentDbo, error) {
 	rows, err := repo.db.QueryxContext(
 		ctx,
 		`
@@ -102,14 +106,18 @@ func (repo *PostgresRepository) GetAllProjects(ctx context.Context) ([]dto.Proje
 						 'id', a.id,
 						 'name', a.name,
 						 'description', a.description,
-						 'article_url', a.article_url,
+						 'content', a.content,
 						 'project_id', a.project_id
 					 )::text AS content
 		FROM projects p
 		LEFT JOIN articles a ON p.id = a.project_id
+		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE p.deleted_at IS NULL
-		  AND a.deleted_at IS NULL;
+		  AND a.deleted_at IS NULL
+		  AND (a.user_id = $1::bigint OR r.name = 'admin');
 		`,
+		user_id,
 	)
 	if err != nil {
 		return nil, err
@@ -187,7 +195,7 @@ func (repo *PostgresRepository) CreateProject(ctx context.Context, project dto.P
 	return proj.Id, nil
 }
 
-func (repo *PostgresRepository) UpdateProject(ctx context.Context, project dto.ProjectDbo) (*dto.ProjectDbo, error) {
+func (repo *PostgresRepository) UpdateProject(ctx context.Context, project dto.ProjectDbo, user_id int64) (*dto.ProjectDbo, error) {
 	project_rows, err := pu.Dispatch[dto.ProjectDbo](
 		ctx,
 		repo.db,
@@ -198,11 +206,14 @@ func (repo *PostgresRepository) UpdateProject(ctx context.Context, project dto.P
 				avatar_url = COALESCE(NULLIF($3::text, ''), t.avatar_url),
 				remote_url = COALESCE(NULLIF($4::text, ''), t.remote_url)
 		FROM (
-			SELECT id, name, description, avatar_url, remote_url
-			FROM projects
-			WHERE id = $5::bigint
+			SELECT pt.id, pt.name, pt.description, pt.avatar_url, pt.remote_url
+			FROM projects pt
+			LEFT JOIN user_roles ur ON pt.user_id = ur.user_id
+			LEFT JOIN roles r ON ur.role_id = r.id
+			WHERE pt.id = $5::bigint
+		    AND (pt.user_id = $6::bigint OR r.name = 'admin')
 		) AS t(id, name, description, avatar_url, remote_url)
-		WHERE t.id = p.id 
+		WHERE t.id = p.id
 		RETURNING p.*;
 		`,
 		project.Name,
@@ -210,6 +221,7 @@ func (repo *PostgresRepository) UpdateProject(ctx context.Context, project dto.P
 		project.AvatarUrl,
 		project.RemoteUrl,
 		project.Id,
+		user_id,
 	)
 	if err != nil {
 		return nil, err
@@ -221,15 +233,20 @@ func (repo *PostgresRepository) UpdateProject(ctx context.Context, project dto.P
 	return &proj, nil
 }
 
-func (repo *PostgresRepository) DeleteProject(ctx context.Context, project_id int64) error {
+func (repo *PostgresRepository) DeleteProject(ctx context.Context, project_id, user_id int64) error {
 	_, err := pu.Dispatch[dto.ProjectDbo](
 		ctx,
 		repo.db,
 		`
 		DELETE FROM projects
-		WHERE id = $1::bigint;
+		USING projects AS p
+		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE projects.id = $1::bigint
+		  AND (p.user_id = $2::bigint OR r.name = 'admin');
 		`,
 		project_id,
+		user_id,
 	)
 	if err != nil {
 		return err

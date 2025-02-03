@@ -21,8 +21,10 @@ type DashboardService struct {
 	user    ports.UserService
 	auth    *auth.Auth
 	otp     ports.OTPService
+	minio   ports.MinioService
 	role    ports.RolesService
 	project ports.ProjectsService
+	article ports.ArticlesService
 	log     *logger.Logger
 	state   State
 }
@@ -32,16 +34,20 @@ func NewDashboardService(
 	user ports.UserService,
 	auth *auth.Auth,
 	otp ports.OTPService,
+	minio ports.MinioService,
 	role ports.RolesService,
 	project ports.ProjectsService,
+	article ports.ArticlesService,
 ) *DashboardService {
 	d := &DashboardService{
 		cfg:     cfg,
 		user:    user,
 		auth:    auth,
 		otp:     otp,
+		minio:   minio,
 		role:    role,
 		project: project,
+		article: article,
 	}
 
 	d.state = Created

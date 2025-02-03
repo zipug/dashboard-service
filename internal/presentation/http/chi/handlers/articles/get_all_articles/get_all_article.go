@@ -12,18 +12,29 @@ import (
 )
 
 type DashboardService interface {
-	GetAllArticles() ([]models.Article, error)
+	GetAllArticles(int64) ([]models.Article, error)
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func GetAllArticles(app DashboardService, log Logger) http.HandlerFunc {
+type Auth interface {
+	GetClaims(*http.Request) map[string]interface{}
+}
+
+func GetAllArticles(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		articles, err := app.GetAllArticles()
+		authClaims := auth.GetClaims(r)
+		authUserId, ok := authClaims["user_id"].(float64)
+		if !ok {
+			log.Log("error", "invalid user_id in jwt token")
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
+			return
+		}
+		articles, err := app.GetAllArticles(int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}

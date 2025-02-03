@@ -1,0 +1,14 @@
+package models
+
+type File struct {
+	Name   string
+	Data   []byte
+	Bucket string
+}
+
+type MinioErr struct {
+	Error    error
+	Bucket   string
+	FileName string
+	ObjectId string
+}

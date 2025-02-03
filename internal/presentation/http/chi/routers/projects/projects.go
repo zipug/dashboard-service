@@ -36,18 +36,18 @@ func ProjectsRouter(r chi.Router) func(
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:read")).
 				Group(func(r chi.Router) {
-					r.Get("/{id}", getprojectbyid.GetProjectById(app, log))
-					r.Get("/all", getallprojects.GetAllProjects(app, log))
+					r.Get("/{id}", getprojectbyid.GetProjectById(app, log, auth))
+					r.Get("/all", getallprojects.GetAllProjects(app, log, auth))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:create")).
 				Post("/create", createproject.CreateProject(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:update")).
-				Post("/update", updateproject.UpdateProject(app, log))
+				Post("/update", updateproject.UpdateProject(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "projects_feature:delete")).
-				Delete("/{id}", deleteprojectbyid.DeleteProject(app, log))
+				Delete("/{id}", deleteprojectbyid.DeleteProject(app, log, auth))
 		})
 		return r
 	}

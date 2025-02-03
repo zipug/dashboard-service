@@ -9,14 +9,6 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-type Kafka struct {
-	Host    string `toml:"host" env:"KAFKA_HOST"`
-	Port    int    `toml:"port" env:"KAFKA_PORT"`
-	Broker  string `toml:"broker" env:"KAFKA_BROKER"`
-	Topic   string `toml:"topic" env:"KAFKA_TOPICS"`
-	GroupID string `toml:"group_id" env:"KAFKA_GROUP_ID"`
-}
-
 type Redis struct {
 	Host          string `toml:"host" env:"REDIS_HOST" env-default:"localhost"`
 	Port          int    `toml:"port" env:"REDIS_PORT" env-default:"6380"`
@@ -47,18 +39,25 @@ type Prometheus struct {
 }
 
 type MiniO struct {
-	Host   string `toml:"host" env:"MINIO_HOST"`
-	Port   int    `toml:"port" env:"MINIO_PORT"`
-	Bucket string `toml:"bucket" env:"MINIO_BUCKET"`
+	Host              string        `toml:"host" env:"MINIO_HOST"`
+	Port              int           `toml:"port" env:"MINIO_PORT"`
+	User              string        `toml:"user" env:"MINIO_ROOT_USER"`
+	Password          string        `toml:"password" env:"MINIO_ROOT_PASSWORD"`
+	BucketArticles    string        `toml:"articles_bucket" env:"MINIO_ARTICLES_BUCKET"`
+	BucketAttachments string        `toml:"attachments_bucket" env:"MINIO_ATTACHMENTS_BUCKET"`
+	BucketAvatars     string        `toml:"avatars_bucket" env:"MINIO_AVATARS_BUCKET"`
+	UrlLifetime       time.Duration `toml:"url_lifetime" env:"MINIO_URL_LIFETIME" env-default:"4h"`
+	UseSsl            bool          `toml:"use_ssl" env:"MINIO_USE_SSL"`
 }
 
 type Server struct {
-	Host         string        `toml:"host" env:"SERVER_HOST" env-default:"::1"`
-	Port         int           `toml:"port" env:"SERVER_PORT" env-default:"4400"`
-	DefaultApi   string        `toml:"default_api" env:"DEFAULT_API" env-default:"/api/v1/"`
-	ReadTimeout  time.Duration `toml:"read_timeout" env:"READ_TIMEOUT" env-default:"5s"`
-	WriteTimeout time.Duration `toml:"write_timeout" env:"WRITE_TIMEOUT" env-default:"5s"`
-	IdleTimeout  time.Duration `toml:"idle_timeout" env:"IDLE_TIMEOUT" env-default:"60s"`
+	Host               string        `toml:"host" env:"SERVER_HOST" env-default:"::1"`
+	Port               int           `toml:"port" env:"SERVER_PORT" env-default:"4400"`
+	DefaultApi         string        `toml:"default_api" env:"DEFAULT_API" env-default:"/api/v1/"`
+	ReadTimeout        time.Duration `toml:"read_timeout" env:"READ_TIMEOUT" env-default:"5s"`
+	WriteTimeout       time.Duration `toml:"write_timeout" env:"WRITE_TIMEOUT" env-default:"5s"`
+	IdleTimeout        time.Duration `toml:"idle_timeout" env:"IDLE_TIMEOUT" env-default:"60s"`
+	MaxParallelWorkers int           `toml:"max_parallel_workers" env:"MAX_PARALLEL_WORKERS" env-default:"3"`
 }
 
 type OTP struct {
@@ -72,7 +71,6 @@ type AppConfig struct {
 	Env                   ENV           `env:"ENV" env-default:"production"`
 	JwtSecretKey          string        `toml:"jwt_secret_key" env:"JWT_SECREY_KEY" env-required:"true"`
 	AccessTokenExpiration time.Duration `toml:"access_token_exp" env:"ACCESS_TOKEN_EXP" env-required:"true"`
-	Kafka                 Kafka         `toml:"kafka"`
 	Redis                 Redis         `toml:"redis"`
 	Postgres              Postgres      `toml:"postgres"`
 	Mongo                 Mongo         `toml:"mongo"`
