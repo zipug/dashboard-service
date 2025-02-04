@@ -109,7 +109,14 @@ func (repo *MinioRepository) PingTest() error {
 func (repo *MinioRepository) UploadFile(ctx context.Context, file models.File) (string, error) {
 	obj_id := uuid.New().String()
 	reader := bytes.NewReader(file.Data)
-	if _, err := repo.mc.PutObject(ctx, file.Bucket, obj_id, reader, int64(len(file.Data)), minio.PutObjectOptions{}); err != nil {
+	if _, err := repo.mc.PutObject(
+		ctx,
+		file.Bucket,
+		obj_id,
+		reader,
+		int64(len(file.Data)),
+		minio.PutObjectOptions{ContentType: file.ContentType},
+	); err != nil {
 		return "", err
 	}
 	return repo.GetFileUrl(ctx, obj_id, file.Bucket)

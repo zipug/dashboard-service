@@ -5,7 +5,7 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
-	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
+	uploadfile "dashboard/internal/presentation/http/chi/handlers/attachments/upload_file"
 	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
 	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
 	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
@@ -41,7 +41,7 @@ func AttachmentsRouter(r chi.Router) func(
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:create")).
-				Post("/create", createrole.CreateRole(app, log))
+				Post("/upload", uploadfile.UploadAttachment(app, log))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:update")).
 				Post("/update", updaterole.UpdateRole(app, log))

@@ -1,9 +1,10 @@
 package models
 
 type File struct {
-	Name   string
-	Data   []byte
-	Bucket string
+	Name        string
+	Data        []byte
+	Bucket      string
+	ContentType string
 }
 
 type MinioErr struct {

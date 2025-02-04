@@ -1,9 +1,10 @@
-package uploadarticle
+package uploadfile
 
 import (
 	"bytes"
 	logger "dashboard/internal/common/service/logger/zerolog"
 	"dashboard/internal/presentation/http/chi/handlers"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -12,14 +13,18 @@ import (
 )
 
 type DashboardService interface {
-	UploadArticle(string, string, string) error
+	UploadAttachment(string, string, []byte) (string, error)
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
 }
 
-func UploadArticle(app DashboardService, log Logger) http.HandlerFunc {
+type Attachment struct {
+	URL string `json:"url"`
+}
+
+func UploadAttachment(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
@@ -30,6 +35,7 @@ func UploadArticle(app DashboardService, log Logger) http.HandlerFunc {
 			return
 		}
 		var buf bytes.Buffer
+		defer buf.Reset()
 		file, header, err := r.FormFile("file")
 		if err != nil {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting file"}})
@@ -40,7 +46,6 @@ func UploadArticle(app DashboardService, log Logger) http.HandlerFunc {
 		name := strings.Split(header.Filename, ".")
 		io.Copy(&buf, file)
 		content := buf.String()
-		buf.Reset()
 		log.Log(
 			"info",
 			"file uploaded",
@@ -48,8 +53,12 @@ func UploadArticle(app DashboardService, log Logger) http.HandlerFunc {
 			logger.WithStrAttr("extension", name[1]),
 			logger.WithInt64Attr("size", int64(len(content))),
 		)
-		app.UploadArticle(name[0], name[1], content)
+		url, err := app.UploadAttachment(header.Filename, fmt.Sprintf(".%s", name[1]), buf.Bytes())
+		if err != nil {
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while uploading file"}})
+			return
+		}
 
-		render.JSON(w, r, handlers.Response{Status: handlers.Success})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: Attachment{URL: url}})
 	}
 }
