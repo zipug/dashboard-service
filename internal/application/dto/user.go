@@ -22,6 +22,7 @@ type UserDto struct {
 	AvatarUrl      string       `json:"avatar_url,omitempty"`
 }
 
+//go:generate ../../../cmd/generator/main.go
 type UpdateUserDto struct {
 	Id        int64  `json:"id,omitempty"`
 	Email     string `json:"email,omitempty"`

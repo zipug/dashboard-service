@@ -4,6 +4,7 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	"dashboard/internal/core/service/articles"
+	"dashboard/internal/core/service/attachments"
 	files "dashboard/internal/core/service/minio"
 	"dashboard/internal/core/service/otp"
 	"dashboard/internal/core/service/projects"
@@ -15,17 +16,18 @@ import (
 )
 
 var (
-	configCommonService = config.NewConfigService()
-	postgresRepository  = postgres.NewPostgresRepository(configCommonService)
-	redisRepository     = redis.NewRedisRepository(configCommonService)
-	minioRepository     = minio.NewMinioRepository(configCommonService)
-	usersCoreService    = user.NewUserService(postgresRepository)
-	otpCoreService      = otp.NewOTPService(configCommonService, redisRepository)
-	minioCoreService    = files.NewMinioService(minioRepository)
-	rolesCoreService    = roles.NewRolesService(postgresRepository)
-	projectsCoreService = projects.NewProjectsService(postgresRepository)
-	articlesCoreService = articles.NewArticlesService(postgresRepository)
-	authModule          = auth.New(configCommonService)
+	configCommonService    = config.NewConfigService()
+	postgresRepository     = postgres.NewPostgresRepository(configCommonService)
+	redisRepository        = redis.NewRedisRepository(configCommonService)
+	minioRepository        = minio.NewMinioRepository(configCommonService)
+	usersCoreService       = user.NewUserService(postgresRepository)
+	otpCoreService         = otp.NewOTPService(configCommonService, redisRepository)
+	minioCoreService       = files.NewMinioService(minioRepository)
+	rolesCoreService       = roles.NewRolesService(postgresRepository)
+	projectsCoreService    = projects.NewProjectsService(postgresRepository)
+	articlesCoreService    = articles.NewArticlesService(postgresRepository)
+	attachmentsCoreService = attachments.NewAttachmentsService(postgresRepository)
+	authModule             = auth.New(configCommonService)
 )
 
 var DashboardAppService = NewDashboardService(
@@ -37,4 +39,5 @@ var DashboardAppService = NewDashboardService(
 	rolesCoreService,
 	projectsCoreService,
 	articlesCoreService,
+	attachmentsCoreService,
 )

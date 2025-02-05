@@ -13,7 +13,7 @@ import (
 )
 
 type DashboardService interface {
-	UploadAttachment(string, string, []byte) (string, error)
+	UploadAttachment(string, string, []byte, int64) (string, error)
 }
 
 type Logger interface {
@@ -24,10 +24,22 @@ type Attachment struct {
 	URL string `json:"url"`
 }
 
-func UploadAttachment(app DashboardService, log Logger) http.HandlerFunc {
+type Auth interface {
+	GetClaims(*http.Request) map[string]interface{}
+}
+
+func UploadAttachment(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
+
+		authClaims := auth.GetClaims(r)
+		authUserId, ok := authClaims["user_id"].(float64)
+		if !ok {
+			log.Log("error", "invalid user_id in jwt token")
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
+			return
+		}
 
 		r.ParseMultipartForm(32 << 20)
 		if r.ContentLength > 32<<20 {
@@ -53,7 +65,7 @@ func UploadAttachment(app DashboardService, log Logger) http.HandlerFunc {
 			logger.WithStrAttr("extension", name[1]),
 			logger.WithInt64Attr("size", int64(len(content))),
 		)
-		url, err := app.UploadAttachment(header.Filename, fmt.Sprintf(".%s", name[1]), buf.Bytes())
+		url, err := app.UploadAttachment(header.Filename, fmt.Sprintf(".%s", name[1]), buf.Bytes(), int64(authUserId))
 		if err != nil {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while uploading file"}})
 			return

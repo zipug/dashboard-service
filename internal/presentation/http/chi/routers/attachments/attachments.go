@@ -41,7 +41,7 @@ func AttachmentsRouter(r chi.Router) func(
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:create")).
-				Post("/upload", uploadfile.UploadAttachment(app, log))
+				Post("/upload", uploadfile.UploadAttachment(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:update")).
 				Post("/update", updaterole.UpdateRole(app, log))

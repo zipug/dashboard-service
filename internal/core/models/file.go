@@ -13,3 +13,8 @@ type MinioErr struct {
 	FileName string
 	ObjectId string
 }
+
+type MinioResponse struct {
+	Url      string
+	ObjectId string
+}

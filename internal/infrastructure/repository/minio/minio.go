@@ -106,7 +106,7 @@ func (repo *MinioRepository) PingTest() error {
 	return fmt.Errorf("%w: minio: %s", ErrPing, repo.mc.EndpointURL().String())
 }
 
-func (repo *MinioRepository) UploadFile(ctx context.Context, file models.File) (string, error) {
+func (repo *MinioRepository) UploadFile(ctx context.Context, file models.File) (models.MinioResponse, error) {
 	obj_id := uuid.New().String()
 	reader := bytes.NewReader(file.Data)
 	if _, err := repo.mc.PutObject(
@@ -117,13 +117,13 @@ func (repo *MinioRepository) UploadFile(ctx context.Context, file models.File) (
 		int64(len(file.Data)),
 		minio.PutObjectOptions{ContentType: file.ContentType},
 	); err != nil {
-		return "", err
+		return models.MinioResponse{}, err
 	}
 	return repo.GetFileUrl(ctx, obj_id, file.Bucket)
 }
 
-func (repo *MinioRepository) UploadManyFiles(ctx context.Context, files []models.File) ([]string, []models.MinioErr) {
-	urls := make([]string, 0, len(files))
+func (repo *MinioRepository) UploadManyFiles(ctx context.Context, files []models.File) ([]models.MinioResponse, []models.MinioErr) {
+	urls := make([]models.MinioResponse, 0, len(files))
 	errs := make([]models.MinioErr, 0, len(files))
 
 	cctx, cancel := context.WithCancel(ctx)
@@ -131,12 +131,12 @@ func (repo *MinioRepository) UploadManyFiles(ctx context.Context, files []models
 
 	wg := sync.WaitGroup{}
 	filesCh := make(chan models.File, len(files))
-	urlsCh := make(chan string, len(files))
+	urlsCh := make(chan models.MinioResponse, len(files))
 	errsCh := make(chan models.MinioErr, len(files))
 
 	for i := 0; i < repo.num_workers; i++ {
 		wg.Add(1)
-		go func(ctx context.Context, files <-chan models.File, urls chan<- string, errs chan<- models.MinioErr) {
+		go func(ctx context.Context, files <-chan models.File, urls chan<- models.MinioResponse, errs chan<- models.MinioErr) {
 			defer wg.Done()
 			for file := range files {
 				url, err := repo.UploadFile(ctx, file)
@@ -175,28 +175,28 @@ func (repo *MinioRepository) GetFileUrl(
 	ctx context.Context,
 	obj_id,
 	bucket string,
-) (string, error) {
+) (models.MinioResponse, error) {
 	url, err := repo.mc.PresignedGetObject(ctx, bucket, obj_id, repo.url_lifetime, nil)
 	if err != nil {
-		return "", err
+		return models.MinioResponse{Url: "", ObjectId: obj_id}, err
 	}
-	return url.String(), nil
+	return models.MinioResponse{Url: url.String(), ObjectId: obj_id}, nil
 }
 
-func (repo *MinioRepository) GetManyFileUrls(ctx context.Context, obj_ids []string, bucket string) ([]string, []models.MinioErr) {
-	urls := make([]string, 0, len(obj_ids))
+func (repo *MinioRepository) GetManyFileUrls(ctx context.Context, obj_ids []string, bucket string) ([]models.MinioResponse, []models.MinioErr) {
+	urls := make([]models.MinioResponse, 0, len(obj_ids))
 	errs := make([]models.MinioErr, 0, len(obj_ids))
 	cctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
 	objCh := make(chan string, len(obj_ids))
-	urlsCh := make(chan string, len(obj_ids))
+	urlsCh := make(chan models.MinioResponse, len(obj_ids))
 	errsCh := make(chan models.MinioErr, len(obj_ids))
 
 	for i := 0; i < repo.num_workers; i++ {
 		wg.Add(1)
-		go func(ctx context.Context, objs <-chan string, urls chan<- string, errs chan<- models.MinioErr, b string) {
+		go func(ctx context.Context, objs <-chan string, urls chan<- models.MinioResponse, errs chan<- models.MinioErr, b string) {
 			for _, obj_id := range obj_ids {
 				url, err := repo.GetFileUrl(ctx, obj_id, b)
 				if err != nil {
