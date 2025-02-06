@@ -12,7 +12,7 @@ import (
 )
 
 type DashboardService interface {
-	GetAllAttachments(int64) ([]models.Article, error)
+	GetAllAttachments(int64) ([]models.Attachment, error)
 }
 
 type Logger interface {
@@ -34,16 +34,16 @@ func GetAllAttachments(app DashboardService, log Logger, auth Auth) http.Handler
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
 			return
 		}
-		articles, err := app.GetAllAttachments(int64(authUserId))
+		attachments, err := app.GetAllAttachments(int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)
 			return
 		}
-		var resp []dto.ArticleDto
-		for _, article := range articles {
-			resp = append(resp, dto.ToArticleDto(article))
+		var resp []dto.AttachmentDto
+		for _, attachment := range attachments {
+			resp = append(resp, dto.ToAttachmentDto(attachment))
 		}
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: resp})
 	}

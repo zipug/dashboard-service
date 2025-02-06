@@ -10,6 +10,15 @@ type AttachmentDto struct {
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 	URL         string `json:"url,omitempty"`
+	Mimetype    string `json:"mimetype,omitempty"`
+}
+
+type AttachmentArticleDbo struct {
+	AttachmentId int64          `db:"attachment_id"`
+	ArticleId    int64          `db:"article_id"`
+	CreatedAt    sql.NullString `db:"created_at,omitempty"`
+	UpdateAt     sql.NullString `db:"updated_at,omitempty"`
+	DeleteAt     sql.NullString `db:"deleted_at,omitempty"`
 }
 
 type AttachmentDbo struct {
@@ -59,6 +68,18 @@ func (a *AttachmentDbo) ToDto() AttachmentDto {
 		Id:          a.Id,
 		Name:        a.Name,
 		Description: a.Description.String,
+		Mimetype:    a.Mimetype,
+	}
+}
+
+func (a *AttachmentDbo) ToValue() models.Attachment {
+	return models.Attachment{
+		Id:          a.Id,
+		Name:        a.Name,
+		Description: a.Description.String,
+		UserId:      a.UserID,
+		ObjectId:    a.ObjectId,
+		Mimetype:    a.Mimetype,
 	}
 }
 
@@ -85,6 +106,8 @@ func ToAttachmentDto(a models.Attachment) AttachmentDto {
 		Id:          a.Id,
 		Name:        a.Name,
 		Description: a.Description,
+		Mimetype:    a.Mimetype,
+		URL:         a.URL,
 	}
 }
 
@@ -94,5 +117,7 @@ func ToAttachmentDbo(a models.Attachment) AttachmentDbo {
 		Name:        a.Name,
 		Description: sql.NullString{String: a.Description, Valid: true},
 		UserID:      a.UserId,
+		ObjectId:    a.ObjectId,
+		Mimetype:    a.Mimetype,
 	}
 }

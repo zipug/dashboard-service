@@ -2,6 +2,7 @@ package uploadfile
 
 import (
 	"bytes"
+	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"fmt"
@@ -13,15 +14,11 @@ import (
 )
 
 type DashboardService interface {
-	UploadAttachment(string, string, []byte, int64) (string, error)
+	UploadAttachment(string, string, []byte, int64) (dto.AttachmentDto, error)
 }
 
 type Logger interface {
 	Log(logger.LoggerAction, string, ...logger.LoggerEvent)
-}
-
-type Attachment struct {
-	URL string `json:"url"`
 }
 
 type Auth interface {
@@ -65,12 +62,12 @@ func UploadAttachment(app DashboardService, log Logger, auth Auth) http.HandlerF
 			logger.WithStrAttr("extension", name[1]),
 			logger.WithInt64Attr("size", int64(len(content))),
 		)
-		url, err := app.UploadAttachment(header.Filename, fmt.Sprintf(".%s", name[1]), buf.Bytes(), int64(authUserId))
+		attachment, err := app.UploadAttachment(header.Filename, fmt.Sprintf(".%s", name[1]), buf.Bytes(), int64(authUserId))
 		if err != nil {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while uploading file"}})
 			return
 		}
 
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: Attachment{URL: url}})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: attachment})
 	}
 }

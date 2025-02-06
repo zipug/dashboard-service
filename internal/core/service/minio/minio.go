@@ -21,8 +21,11 @@ func (m *MinioService) UploadFile(ctx context.Context, file models.File) (models
 	return m.repo.UploadFile(ctx, file)
 }
 
-func (m *MinioService) UploadManyFiles(ctx context.Context, files []models.File) ([]models.MinioResponse, error) {
+func (m *MinioService) UploadManyFiles(ctx context.Context, files []models.File) (map[string]models.MinioResponse, error) {
 	urls, errs := m.repo.UploadManyFiles(ctx, files)
+	if len(errs) == 0 {
+		return urls, nil
+	}
 	err_array := make([]string, 0, len(errs))
 	for _, err := range errs {
 		err_array = append(err_array, fmt.Sprintf("error: %v, file: %s, bucket: %s", err.Error, err.FileName, err.Bucket))
@@ -34,8 +37,11 @@ func (m *MinioService) GetFileUrl(ctx context.Context, object_id, bucket string)
 	return m.repo.GetFileUrl(ctx, object_id, bucket)
 }
 
-func (m *MinioService) GetManyFileUrls(ctx context.Context, object_ids []string, bucket string) ([]models.MinioResponse, error) {
+func (m *MinioService) GetManyFileUrls(ctx context.Context, object_ids []string, bucket string) (map[string]models.MinioResponse, error) {
 	urls, errs := m.repo.GetManyFileUrls(ctx, object_ids, bucket)
+	if len(errs) == 0 {
+		return urls, nil
+	}
 	err_array := make([]string, 0, len(errs))
 	for _, err := range errs {
 		err_array = append(err_array, fmt.Sprintf("error: %v, file: %s, bucket: %s", err.Error, err.FileName, err.Bucket))

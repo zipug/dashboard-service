@@ -5,11 +5,11 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
+	bindattachment "dashboard/internal/presentation/http/chi/handlers/attachments/bind_attachment"
+	getallattachments "dashboard/internal/presentation/http/chi/handlers/attachments/get_all_attachments"
+	getattachmentbyid "dashboard/internal/presentation/http/chi/handlers/attachments/get_attachment_by_id"
 	uploadfile "dashboard/internal/presentation/http/chi/handlers/attachments/upload_file"
 	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
-	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
-	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
-	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -36,15 +36,15 @@ func AttachmentsRouter(r chi.Router) func(
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:read")).
 				Group(func(r chi.Router) {
-					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
-					r.Get("/all", getallroles.GetAllRoles(app, log))
+					r.Get("/{id}", getattachmentbyid.GetAttachmentById(app, log, auth))
+					r.Get("/all", getallattachments.GetAllAttachments(app, log, auth))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:create")).
 				Post("/upload", uploadfile.UploadAttachment(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:update")).
-				Post("/update", updaterole.UpdateRole(app, log))
+				Post("/bind", bindattachment.BindAttachment(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:delete")).
 				Delete("/{id}", deleterolebyid.DeleteRole(app, log))

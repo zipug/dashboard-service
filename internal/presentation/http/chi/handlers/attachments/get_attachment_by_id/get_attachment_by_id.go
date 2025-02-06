@@ -14,7 +14,7 @@ import (
 )
 
 type DashboardService interface {
-	GetAttachmentById(int64, int64) (models.Article, error)
+	GetAttachmentById(int64, int64) (models.Attachment, error)
 }
 
 type Logger interface {
@@ -44,7 +44,7 @@ func GetAttachmentById(app DashboardService, log Logger, auth Auth) http.Handler
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		article, err := app.GetAttachmentById(id, int64(authUserId))
+		attachment, err := app.GetAttachmentById(id, int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
@@ -53,6 +53,6 @@ func GetAttachmentById(app DashboardService, log Logger, auth Auth) http.Handler
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToArticleDto(article)})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToAttachmentDto(attachment)})
 	}
 }

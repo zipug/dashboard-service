@@ -15,23 +15,39 @@ func NewAttachmentsService(repo ports.AttachmentsRepository) *AttachmentsService
 	return &AttachmentsService{repo: repo}
 }
 
-func (a *AttachmentsService) GetAttachmentById(ctx context.Context, object_id string, user_id int64) (models.Attachment, error) {
-	return models.Attachment{}, nil
+func (a *AttachmentsService) GetAttachmentById(ctx context.Context, attachment_id, user_id int64) (models.Attachment, error) {
+	attachment, err := a.repo.GetAttachmentById(ctx, attachment_id, user_id)
+	if err != nil {
+		return models.Attachment{}, err
+	}
+	return attachment.ToValue(), nil
 }
 
 func (a *AttachmentsService) GetAllAttachments(ctx context.Context, user_id int64) ([]models.Attachment, error) {
-	return []models.Attachment{}, nil
+	attachments, err := a.repo.GetAllAttachments(ctx, user_id)
+	if err != nil {
+		return nil, err
+	}
+	var res []models.Attachment
+	for _, val := range attachments {
+		res = append(res, val.ToValue())
+	}
+	return res, nil
 }
 
-func (a *AttachmentsService) CreateAttachment(ctx context.Context, attachment models.Attachment) (int64, error) {
+func (a *AttachmentsService) CreateAttachment(ctx context.Context, attachment models.Attachment) (models.Attachment, error) {
 	dbo := dto.ToAttachmentDbo(attachment)
-	return a.repo.CreateAttachment(ctx, dbo)
+	new_dbo, err := a.repo.CreateAttachment(ctx, dbo)
+	if err != nil {
+		return models.Attachment{}, err
+	}
+	return new_dbo.ToValue(), nil
 }
 
-func (a *AttachmentsService) BindAttachment(ctx context.Context, object_id string, article_id, user_id int64) error {
-	return nil
+func (a *AttachmentsService) BindAttachment(ctx context.Context, attachment_id, article_id, user_id int64) error {
+	return a.repo.BindAttachment(ctx, attachment_id, article_id, user_id)
 }
 
-func (a *AttachmentsService) DeleteAttachment(ctx context.Context, object_id string, user_id int64) error {
+func (a *AttachmentsService) DeleteAttachment(ctx context.Context, attachment_id, user_id int64) error {
 	return nil
 }

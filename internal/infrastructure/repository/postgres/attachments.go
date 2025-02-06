@@ -7,17 +7,59 @@ import (
 	"errors"
 )
 
-var ErrCreateAttachment = errors.New("could not create attachment")
+var (
+	ErrCreateAttachment  = errors.New("could not create attachment")
+	ErrBindAttachment    = errors.New("could not bind attachment")
+	ErrGetAttachment     = errors.New("could not get attachment")
+	ErrGetAllAttachments = errors.New("could not get all attachments")
+	ErrDeleteAttachment  = errors.New("could not delete attachment")
+)
 
-func (repo *PostgresRepository) GetAttachmentById(ctx context.Context, object_id string, user_id int64) (*dto.AttachmentDbo, error) {
-	return nil, nil
+func (repo *PostgresRepository) GetAttachmentById(ctx context.Context, attachment_id, user_id int64) (*dto.AttachmentDbo, error) {
+	rows, err := pu.Dispatch[dto.AttachmentDbo](
+		ctx,
+		repo.db,
+		`
+		SELECT id, name, description, object_id, mimetype, user_id
+		FROM attachments
+		WHERE id = $1::bigint
+		  AND user_id = $2::bigint
+		  AND deleted_at IS NULL;
+		`,
+		attachment_id,
+		user_id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, ErrGetAttachment
+	}
+	return &rows[0], nil
 }
 
 func (repo *PostgresRepository) GetAllAttachments(ctx context.Context, user_id int64) ([]dto.AttachmentDbo, error) {
-	return nil, nil
+	rows, err := pu.Dispatch[dto.AttachmentDbo](
+		ctx,
+		repo.db,
+		`
+		SELECT id, name, description, object_id, mimetype, user_id
+		FROM attachments
+		WHERE user_id = $1::bigint
+		  AND deleted_at IS NULL;
+		`,
+		user_id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, ErrGetAllAttachments
+	}
+	return rows, nil
 }
 
-func (repo *PostgresRepository) CreateAttachment(ctx context.Context, attachment dto.AttachmentDbo) (int64, error) {
+func (repo *PostgresRepository) CreateAttachment(ctx context.Context, attachment dto.AttachmentDbo) (dto.AttachmentDbo, error) {
 	rows, err := pu.Dispatch[dto.AttachmentDbo](
 		ctx,
 		repo.db,
@@ -33,18 +75,41 @@ func (repo *PostgresRepository) CreateAttachment(ctx context.Context, attachment
 		attachment.UserID,
 	)
 	if err != nil {
-		return -1, err
+		return dto.AttachmentDbo{}, err
 	}
 	if len(rows) == 0 {
-		return -1, ErrCreateAttachment
+		return dto.AttachmentDbo{}, ErrCreateAttachment
 	}
-	return rows[0].Id, err
+	return rows[0], err
 }
 
-func (repo *PostgresRepository) BindAttachment(ctx context.Context, object_id string, article_id, user_id int64) error {
+func (repo *PostgresRepository) BindAttachment(ctx context.Context, attachment_id, article_id, user_id int64) error {
+	rows, err := pu.Dispatch[dto.AttachmentArticleDbo](
+		ctx,
+		repo.db,
+		`
+		INSERT INTO attachments_articles(attachment_id, article_id)
+		SELECT $1::bigint AS attachment_id, $2::bigint AS article_id
+		FROM articles a
+		LEFT JOIN attachments aa ON aa.id = $1::bigint
+		WHERE aa.user_id = $3::bigint
+			AND aa.deleted_at IS NULL
+		  AND a.id = $2::bigint
+		RETURNING *;
+		`,
+		attachment_id,
+		article_id,
+		user_id,
+	)
+	if err != nil {
+		return err
+	}
+	if len(rows) == 0 {
+		return ErrBindAttachment
+	}
 	return nil
 }
 
-func (repo *PostgresRepository) DeleteAttachment(ctx context.Context, object_id string, user_id int64) error {
+func (repo *PostgresRepository) DeleteAttachment(ctx context.Context, attachment_id, user_id int64) error {
 	return nil
 }

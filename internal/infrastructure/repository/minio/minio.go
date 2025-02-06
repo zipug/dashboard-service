@@ -122,51 +122,46 @@ func (repo *MinioRepository) UploadFile(ctx context.Context, file models.File) (
 	return repo.GetFileUrl(ctx, obj_id, file.Bucket)
 }
 
-func (repo *MinioRepository) UploadManyFiles(ctx context.Context, files []models.File) ([]models.MinioResponse, []models.MinioErr) {
-	urls := make([]models.MinioResponse, 0, len(files))
+func (repo *MinioRepository) UploadManyFiles(ctx context.Context, files []models.File) (map[string]models.MinioResponse, []models.MinioErr) {
+	urls := make(map[string]models.MinioResponse, len(files))
 	errs := make([]models.MinioErr, 0, len(files))
 
 	cctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
-	filesCh := make(chan models.File, len(files))
 	urlsCh := make(chan models.MinioResponse, len(files))
 	errsCh := make(chan models.MinioErr, len(files))
 
-	for i := 0; i < repo.num_workers; i++ {
+	for _, file := range files {
 		wg.Add(1)
-		go func(ctx context.Context, files <-chan models.File, urls chan<- models.MinioResponse, errs chan<- models.MinioErr) {
+		go func() {
 			defer wg.Done()
-			for file := range files {
-				url, err := repo.UploadFile(ctx, file)
-				if err != nil {
-					errs <- models.MinioErr{Error: err, FileName: file.Name, Bucket: file.Bucket}
-					continue
-				}
-				urls <- url
+			url, err := repo.UploadFile(cctx, file)
+			if err != nil {
+				errsCh <- models.MinioErr{Error: err, FileName: file.Name, Bucket: file.Bucket}
 			}
-		}(cctx, filesCh, urlsCh, errsCh)
+			urlsCh <- url
+		}()
 	}
 
-	go func() {
-		for _, file := range files {
-			filesCh <- file
+	wg.Wait()
+ChanLoop:
+	for {
+		select {
+		case url := <-urlsCh:
+			urls[url.ObjectId] = url
+		default:
 		}
-		close(filesCh)
-	}()
-
-	go func() {
-		wg.Wait()
-		for url := range urlsCh {
-			urls = append(urls, url)
-		}
-		for err := range errsCh {
+		select {
+		case err := <-errsCh:
 			errs = append(errs, err)
+		default:
+			close(urlsCh)
+			close(errsCh)
+			break ChanLoop
 		}
-		close(urlsCh)
-		close(errsCh)
-	}()
+	}
 
 	return urls, errs
 }
@@ -183,49 +178,45 @@ func (repo *MinioRepository) GetFileUrl(
 	return models.MinioResponse{Url: url.String(), ObjectId: obj_id}, nil
 }
 
-func (repo *MinioRepository) GetManyFileUrls(ctx context.Context, obj_ids []string, bucket string) ([]models.MinioResponse, []models.MinioErr) {
-	urls := make([]models.MinioResponse, 0, len(obj_ids))
+func (repo *MinioRepository) GetManyFileUrls(ctx context.Context, obj_ids []string, bucket string) (map[string]models.MinioResponse, []models.MinioErr) {
+	urls := make(map[string]models.MinioResponse, len(obj_ids))
 	errs := make([]models.MinioErr, 0, len(obj_ids))
 	cctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
-	objCh := make(chan string, len(obj_ids))
 	urlsCh := make(chan models.MinioResponse, len(obj_ids))
 	errsCh := make(chan models.MinioErr, len(obj_ids))
 
-	for i := 0; i < repo.num_workers; i++ {
+	for _, obj_id := range obj_ids {
 		wg.Add(1)
-		go func(ctx context.Context, objs <-chan string, urls chan<- models.MinioResponse, errs chan<- models.MinioErr, b string) {
-			for _, obj_id := range obj_ids {
-				url, err := repo.GetFileUrl(ctx, obj_id, b)
-				if err != nil {
-					errs <- models.MinioErr{Error: err, FileName: obj_id, Bucket: b}
-					continue
-				}
-				urls <- url
+		go func() {
+			defer wg.Done()
+			url, err := repo.GetFileUrl(cctx, obj_id, bucket)
+			if err != nil {
+				errsCh <- models.MinioErr{Error: err, FileName: obj_id, Bucket: bucket}
 			}
-		}(cctx, objCh, urlsCh, errsCh, bucket)
+			urlsCh <- url
+		}()
 	}
 
-	go func() {
-		for _, obj_id := range obj_ids {
-			objCh <- obj_id
+	wg.Wait()
+ChanLoop:
+	for {
+		select {
+		case url := <-urlsCh:
+			urls[url.ObjectId] = url
+		default:
 		}
-		close(objCh)
-	}()
-
-	go func() {
-		wg.Wait()
-		for url := range urlsCh {
-			urls = append(urls, url)
-		}
-		for err := range errsCh {
+		select {
+		case err := <-errsCh:
 			errs = append(errs, err)
+		default:
+			close(urlsCh)
+			close(errsCh)
+			break ChanLoop
 		}
-		close(urlsCh)
-		close(errsCh)
-	}()
+	}
 
 	return urls, errs
 }
