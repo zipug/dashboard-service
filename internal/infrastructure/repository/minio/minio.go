@@ -146,21 +146,13 @@ func (repo *MinioRepository) UploadManyFiles(ctx context.Context, files []models
 	}
 
 	wg.Wait()
-ChanLoop:
-	for {
-		select {
-		case url := <-urlsCh:
-			urls[url.ObjectId] = url
-		default:
-		}
-		select {
-		case err := <-errsCh:
-			errs = append(errs, err)
-		default:
-			close(urlsCh)
-			close(errsCh)
-			break ChanLoop
-		}
+	close(urlsCh)
+	close(errsCh)
+	for url := range urlsCh {
+		urls[url.ObjectId] = url
+	}
+	for err := range errsCh {
+		errs = append(errs, err)
 	}
 
 	return urls, errs
@@ -201,21 +193,13 @@ func (repo *MinioRepository) GetManyFileUrls(ctx context.Context, obj_ids []stri
 	}
 
 	wg.Wait()
-ChanLoop:
-	for {
-		select {
-		case url := <-urlsCh:
-			urls[url.ObjectId] = url
-		default:
-		}
-		select {
-		case err := <-errsCh:
-			errs = append(errs, err)
-		default:
-			close(urlsCh)
-			close(errsCh)
-			break ChanLoop
-		}
+	close(urlsCh)
+	close(errsCh)
+	for url := range urlsCh {
+		urls[url.ObjectId] = url
+	}
+	for err := range errsCh {
+		errs = append(errs, err)
 	}
 
 	return urls, errs
@@ -235,33 +219,21 @@ func (repo *MinioRepository) DeleteManyFiles(ctx context.Context, obj_ids []stri
 
 	wg := sync.WaitGroup{}
 	errsCh := make(chan models.MinioErr, len(obj_ids))
-	objCh := make(chan string, len(obj_ids))
 
-	for i := 0; i < repo.num_workers; i++ {
+	for _, obj_id := range obj_ids {
 		wg.Add(1)
-		go func(ctx context.Context, objs <-chan string, errs chan<- models.MinioErr, b string) {
-			for _, obj_id := range obj_ids {
-				if err := repo.DeleteFile(ctx, obj_id, b); err != nil {
-					errs <- models.MinioErr{Error: err, FileName: obj_id, Bucket: b}
-				}
+		go func() {
+			if err := repo.DeleteFile(cctx, obj_id, bucket); err != nil {
+				errsCh <- models.MinioErr{Error: err, FileName: obj_id, Bucket: bucket}
 			}
-		}(cctx, objCh, errsCh, bucket)
+		}()
 	}
 
-	go func() {
-		for _, obj_id := range obj_ids {
-			objCh <- obj_id
-		}
-		close(objCh)
-	}()
-
-	go func() {
-		wg.Wait()
-		for err := range errsCh {
-			errs = append(errs, err)
-		}
-		close(errsCh)
-	}()
+	wg.Wait()
+	close(errsCh)
+	for err := range errsCh {
+		errs = append(errs, err)
+	}
 
 	return errs
 }

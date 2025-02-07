@@ -49,5 +49,5 @@ func (a *AttachmentsService) BindAttachment(ctx context.Context, attachment_id, 
 }
 
 func (a *AttachmentsService) DeleteAttachment(ctx context.Context, attachment_id, user_id int64) error {
-	return nil
+	return a.repo.DeleteAttachment(ctx, attachment_id, user_id)
 }

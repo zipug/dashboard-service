@@ -111,5 +111,44 @@ func (repo *PostgresRepository) BindAttachment(ctx context.Context, attachment_i
 }
 
 func (repo *PostgresRepository) DeleteAttachment(ctx context.Context, attachment_id, user_id int64) error {
+	tx := repo.db.MustBegin()
+	_, err := pu.DispatchTx[dto.AttachmentArticleDbo](
+		ctx,
+		tx,
+		`
+		DELETE FROM attachments_articles
+		USING attachments_articles AS a
+		LEFT JOIN attachments aa ON a.attachment_id = aa.id
+		LEFT JOIN user_roles ur ON aa.user_id = ur.user_id
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE attachments_articles.attachment_id = $1::bigint
+		  AND (aa.user_id = $2::bigint OR r.name = 'admin');
+		`,
+		attachment_id,
+		user_id,
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = pu.DispatchTx[dto.AttachmentDbo](
+		ctx,
+		tx,
+		`
+		DELETE FROM attachments
+		USING attachments AS a
+		LEFT JOIN user_roles ur ON a.user_id = ur.user_id
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE attachments.id = $1::bigint
+		  AND (a.user_id = $2::bigint OR r.name = 'admin');
+		`,
+		attachment_id,
+		user_id,
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
 	return nil
 }

@@ -110,8 +110,15 @@ func (d *DashboardService) GetAllAttachments(user_id int64) ([]models.Attachment
 
 func (d *DashboardService) DeleteAttachment(attachment_id, user_id int64) error {
 	ctx := context.Background()
-	err := d.attachment.DeleteAttachment(ctx, attachment_id, user_id)
+	att, err := d.attachment.GetAttachmentById(ctx, attachment_id, user_id)
 	if err != nil {
+		return err
+	}
+	if err := d.attachment.DeleteAttachment(ctx, attachment_id, user_id); err != nil {
+		d.log.Log("error", "error while deleting attachment", logger.WithErrAttr(err))
+		return err
+	}
+	if err = d.minio.DeleteFile(ctx, att.ObjectId, "attachments"); err != nil {
 		d.log.Log("error", "error while deleting attachment", logger.WithErrAttr(err))
 		return err
 	}

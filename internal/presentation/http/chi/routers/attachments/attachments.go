@@ -6,10 +6,10 @@ import (
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
 	bindattachment "dashboard/internal/presentation/http/chi/handlers/attachments/bind_attachment"
+	deletefile "dashboard/internal/presentation/http/chi/handlers/attachments/delete_file"
 	getallattachments "dashboard/internal/presentation/http/chi/handlers/attachments/get_all_attachments"
 	getattachmentbyid "dashboard/internal/presentation/http/chi/handlers/attachments/get_attachment_by_id"
 	uploadfile "dashboard/internal/presentation/http/chi/handlers/attachments/upload_file"
-	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -47,7 +47,7 @@ func AttachmentsRouter(r chi.Router) func(
 				Post("/bind", bindattachment.BindAttachment(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "attachments_feature:delete")).
-				Delete("/{id}", deleterolebyid.DeleteRole(app, log))
+				Delete("/{id}", deletefile.DeleteAttachment(app, log, auth))
 		})
 		return r
 	}

@@ -1,7 +1,9 @@
-package deletefile
+package getattachmentbyid
 
 import (
+	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
+	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
 	"strconv"
@@ -12,7 +14,7 @@ import (
 )
 
 type DashboardService interface {
-	DeleteAttachment(int64, int64) error
+	GetAttachmentById(int64, int64) (models.Attachment, error)
 }
 
 type Logger interface {
@@ -23,11 +25,8 @@ type Auth interface {
 	GetClaims(*http.Request) map[string]interface{}
 }
 
-func DeleteAttachment(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+func GetAttachmentById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -45,13 +44,15 @@ func DeleteAttachment(app DashboardService, log Logger, auth Auth) http.HandlerF
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		if err := app.DeleteAttachment(id, int64(authUserId)); err != nil {
+		attachment, err := app.GetAttachmentById(id, int64(authUserId))
+		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)
 			return
 		}
-
-		render.JSON(w, r, handlers.Response{Status: handlers.Success})
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToAttachmentDto(attachment)})
 	}
 }
