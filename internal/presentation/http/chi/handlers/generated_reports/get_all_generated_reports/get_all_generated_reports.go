@@ -1,4 +1,4 @@
-package getallbots
+package getallgeneratedreports
 
 import (
 	"dashboard/internal/application/dto"
@@ -12,7 +12,7 @@ import (
 )
 
 type DashboardService interface {
-	GetAllBots(int64) ([]models.Bot, error)
+	GetAllGeneratedReports(int64) ([]models.GeneratedReport, error)
 }
 
 type Logger interface {
@@ -20,11 +20,13 @@ type Logger interface {
 }
 
 type Auth interface {
-	GetClaims(*http.Request) map[string]interface{}
+	GetClaims(r *http.Request) map[string]interface{}
 }
 
-func GetAllBots(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+func GetAllGeneratedReports(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -32,19 +34,17 @@ func GetAllBots(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
 			return
 		}
-		bots, err := app.GetAllBots(int64(authUserId))
+		generated_reports, err := app.GetAllGeneratedReports(int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)
 			return
 		}
-		var resp []dto.BotDto
-		for _, bot := range bots {
-			resp = append(resp, dto.ToBotDto(bot))
+		var resp []dto.GeneratedReportDto
+		for _, report := range generated_reports {
+			resp = append(resp, dto.ToGeneratedReportDto(report))
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: resp})
 	}
 }

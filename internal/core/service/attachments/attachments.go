@@ -23,6 +23,18 @@ func (a *AttachmentsService) GetAttachmentById(ctx context.Context, attachment_i
 	return attachment.ToValue(), nil
 }
 
+func (a *AttachmentsService) GetAllAttachmentsByArticleId(ctx context.Context, article_id int64) ([]models.Attachment, error) {
+	var res []models.Attachment
+	dbo, err := a.repo.GetAllAttachmentsByArticleId(ctx, article_id)
+	if err != nil {
+		return res, err
+	}
+	for _, val := range dbo {
+		res = append(res, val.ToValue())
+	}
+	return res, nil
+}
+
 func (a *AttachmentsService) GetAllAttachments(ctx context.Context, user_id int64) ([]models.Attachment, error) {
 	attachments, err := a.repo.GetAllAttachments(ctx, user_id)
 	if err != nil {

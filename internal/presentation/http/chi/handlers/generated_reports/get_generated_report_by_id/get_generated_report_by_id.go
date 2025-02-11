@@ -1,10 +1,11 @@
-package getbotbyid
+package getgeneratedreportbyid
 
 import (
-	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
 	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
+	"encoding/csv"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,7 +15,7 @@ import (
 )
 
 type DashboardService interface {
-	GetBotById(int64, int64) (models.Bot, error)
+	GetGeneratedReportById(int64, int64) (models.GeneratedReport, error)
 }
 
 type Logger interface {
@@ -22,11 +23,13 @@ type Logger interface {
 }
 
 type Auth interface {
-	GetClaims(*http.Request) map[string]interface{}
+	GetClaims(r *http.Request) map[string]interface{}
 }
 
-func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+func GetGeneratedReportById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -44,15 +47,27 @@ func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		bot, err := app.GetBotById(id, int64(authUserId))
+		generated_report, err := app.GetGeneratedReportById(id, int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToBotDto(bot)})
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.csv", generated_report.ObjectID))
+
+		writter := csv.NewWriter(w)
+		defer writter.Flush()
+
+		if err := writter.Write(generated_report.Content.Headers); err != nil {
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while downloading report", err.Error()}})
+			return
+		}
+		for _, rec := range generated_report.Content.Rows {
+			if err := writter.Write(rec); err != nil {
+				render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while downloading report", err.Error()}})
+				return
+			}
+		}
 	}
 }

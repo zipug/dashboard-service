@@ -6,12 +6,13 @@ import (
 )
 
 type ArticleDto struct {
-	Id          int64  `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Content     string `json:"content,omitempty"`
-	ArticleUrl  string `json:"article_url,omitempty"`
-	ProjectId   int64  `json:"project_id,omitempty"`
+	Id          int64           `json:"id,omitempty"`
+	Name        string          `json:"name,omitempty"`
+	Description string          `json:"description,omitempty"`
+	Content     string          `json:"content,omitempty"`
+	ArticleUrl  string          `json:"article_url,omitempty"`
+	ProjectId   int64           `json:"project_id,omitempty"`
+	Attachments []AttachmentDto `json:"attachments,omitempty"`
 }
 
 type ArticleDbo struct {
@@ -88,6 +89,10 @@ func (a *ArticleDbo) ToValue() models.Article {
 }
 
 func ToArticleDto(a models.Article) ArticleDto {
+	var attachments []AttachmentDto
+	for _, attachment := range a.Attachments {
+		attachments = append(attachments, ToAttachmentDto(attachment))
+	}
 	return ArticleDto{
 		Id:          a.Id,
 		Name:        a.Name,
@@ -95,6 +100,7 @@ func ToArticleDto(a models.Article) ArticleDto {
 		ArticleUrl:  a.ArticleUrl,
 		Content:     a.Content,
 		ProjectId:   a.ProjectId,
+		Attachments: attachments,
 	}
 }
 

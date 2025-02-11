@@ -7,4 +7,5 @@ type Article struct {
 	ArticleUrl  string
 	Content     string
 	ProjectId   int64
+	Attachments []Attachment
 }

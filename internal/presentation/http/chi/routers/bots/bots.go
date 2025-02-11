@@ -5,11 +5,12 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
-	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
-	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
-	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
-	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
-	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
+	createbot "dashboard/internal/presentation/http/chi/handlers/bots/create_bot"
+	deletebotbyid "dashboard/internal/presentation/http/chi/handlers/bots/delete_bot_by_id"
+	getallbots "dashboard/internal/presentation/http/chi/handlers/bots/get_all_bots"
+	getbotbyid "dashboard/internal/presentation/http/chi/handlers/bots/get_bot_by_id"
+	setbotstatebyid "dashboard/internal/presentation/http/chi/handlers/bots/set_bot_state_by_id"
+	updatebotbyid "dashboard/internal/presentation/http/chi/handlers/bots/update_bot_by_id"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -36,18 +37,21 @@ func BotsRouter(r chi.Router) func(
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "bots_feature:read")).
 				Group(func(r chi.Router) {
-					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
-					r.Get("/all", getallroles.GetAllRoles(app, log))
+					r.Get("/{id}", getbotbyid.GetBotById(app, log, auth))
+					r.Get("/all", getallbots.GetAllBots(app, log, auth))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "bots_feature:create")).
-				Post("/create", createrole.CreateRole(app, log))
+				Post("/create", createbot.CreateBot(app, log, auth))
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "bots_feature:update")).
-				Post("/update", updaterole.UpdateRole(app, log))
+				Group(func(r chi.Router) {
+					r.Post("/update", updatebotbyid.UpdateBotById(app, log, auth))
+					r.Post("/set-state", setbotstatebyid.SetBotState(app, log, auth))
+				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "bots_feature:delete")).
-				Delete("/{id}", deleterolebyid.DeleteRole(app, log))
+				Delete("/{id}", deletebotbyid.DeleteBotById(app, log, auth))
 		})
 		return r
 	}

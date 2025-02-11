@@ -15,6 +15,29 @@ func (d *DashboardService) GetArticleById(article_id, user_id int64) (models.Art
 		d.log.Log("error", "error while getting article by id", logger.WithErrAttr(err))
 		return article, err
 	}
+	attachments, err := d.attachment.GetAllAttachmentsByArticleId(ctx, article_id)
+	if err != nil {
+		d.log.Log("error", "error while getting attachments by article id", logger.WithErrAttr(err))
+		return article, err
+	}
+	var object_ids []string
+	for _, attachment := range attachments {
+		object_ids = append(object_ids, attachment.ObjectId)
+	}
+	data, err := d.minio.GetManyFileUrls(ctx, object_ids, "attachments")
+	if err != nil {
+		d.log.Log("error", "error while getting attachments by article id", logger.WithErrAttr(err))
+		return article, err
+	}
+	for i := 0; i < len(attachments); i++ {
+		article.Attachments = append(article.Attachments, models.Attachment{
+			Id:          attachments[i].Id,
+			Name:        attachments[i].Name,
+			Description: attachments[i].Description,
+			Mimetype:    attachments[i].Mimetype,
+			URL:         data[attachments[i].ObjectId].Url,
+		})
+	}
 	d.log.Log("info", "article successfully get", logger.WithStrAttr("article_id", article.Name))
 	return article, nil
 }
@@ -26,6 +49,31 @@ func (d *DashboardService) GetAllArticles(user_id int64) ([]models.Article, erro
 	if err != nil {
 		d.log.Log("error", "error while fetching articles", logger.WithErrAttr(err))
 		return articles, err
+	}
+	for i := 0; i < len(articles); i++ {
+		attachments, err := d.attachment.GetAllAttachmentsByArticleId(ctx, articles[i].Id)
+		if err != nil {
+			d.log.Log("error", "error while getting attachments by article id", logger.WithErrAttr(err))
+			return nil, err
+		}
+		var object_ids []string
+		for _, attachment := range attachments {
+			object_ids = append(object_ids, attachment.ObjectId)
+		}
+		data, err := d.minio.GetManyFileUrls(ctx, object_ids, "attachments")
+		if err != nil {
+			d.log.Log("error", "error while getting attachments by article id", logger.WithErrAttr(err))
+			return nil, err
+		}
+		for j := 0; j < len(attachments); j++ {
+			articles[i].Attachments = append(articles[i].Attachments, models.Attachment{
+				Id:          attachments[j].Id,
+				Name:        attachments[j].Name,
+				Description: attachments[j].Description,
+				Mimetype:    attachments[j].Mimetype,
+				URL:         data[attachments[j].ObjectId].Url,
+			})
+		}
 	}
 	d.log.Log(
 		"info",

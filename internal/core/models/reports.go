@@ -5,3 +5,5 @@ type Report struct {
 	Description string
 	Icon        string
 }
+
+const REPORT_EVENT = "report_event"

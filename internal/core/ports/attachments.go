@@ -12,6 +12,7 @@ type AttachmentsService interface {
 	CreateAttachment(context.Context, models.Attachment) (models.Attachment, error)
 	BindAttachment(context.Context, int64, int64, int64) error
 	DeleteAttachment(context.Context, int64, int64) error
+	GetAllAttachmentsByArticleId(context.Context, int64) ([]models.Attachment, error)
 }
 
 type AttachmentsRepository interface {
@@ -20,4 +21,5 @@ type AttachmentsRepository interface {
 	CreateAttachment(context.Context, dto.AttachmentDbo) (dto.AttachmentDbo, error)
 	BindAttachment(context.Context, int64, int64, int64) error
 	DeleteAttachment(context.Context, int64, int64) error
+	GetAllAttachmentsByArticleId(context.Context, int64) ([]dto.AttachmentDbo, error)
 }

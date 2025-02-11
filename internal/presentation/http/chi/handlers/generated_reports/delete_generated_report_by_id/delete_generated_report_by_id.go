@@ -1,20 +1,17 @@
-package getbotbyid
+package deletegeneratedreportbyid
 
 import (
-	"dashboard/internal/application/dto"
 	logger "dashboard/internal/common/service/logger/zerolog"
-	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type DashboardService interface {
-	GetBotById(int64, int64) (models.Bot, error)
+	DeleteGeneratedReportById(int64, int64) error
 }
 
 type Logger interface {
@@ -22,11 +19,13 @@ type Logger interface {
 }
 
 type Auth interface {
-	GetClaims(*http.Request) map[string]interface{}
+	GetClaims(r *http.Request) map[string]interface{}
 }
 
-func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+func DeleteGeneratedReportById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -44,15 +43,11 @@ func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		bot, err := app.GetBotById(id, int64(authUserId))
-		if err != nil {
-			errs := strings.Split(err.Error(), "\n")
-			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
+		if err := app.DeleteGeneratedReportById(id, int64(authUserId)); err != nil {
+			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to delete generated_report"}}
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToBotDto(bot)})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success})
 	}
 }

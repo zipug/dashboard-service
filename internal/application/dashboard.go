@@ -17,17 +17,20 @@ const (
 )
 
 type DashboardService struct {
-	cfg        *config.AppConfig
-	user       ports.UserService
-	auth       *auth.Auth
-	otp        ports.OTPService
-	minio      ports.MinioService
-	role       ports.RolesService
-	project    ports.ProjectsService
-	article    ports.ArticlesService
-	attachment ports.AttachmentsService
-	log        *logger.Logger
-	state      State
+	cfg              *config.AppConfig
+	user             ports.UserService
+	auth             *auth.Auth
+	otp              ports.OTPService
+	minio            ports.MinioService
+	role             ports.RolesService
+	project          ports.ProjectsService
+	article          ports.ArticlesService
+	attachment       ports.AttachmentsService
+	bot              ports.BotsService
+	report           ports.ReportsService
+	generated_report ports.GeneratedReportsService
+	log              *logger.Logger
+	state            State
 }
 
 func NewDashboardService(
@@ -40,17 +43,23 @@ func NewDashboardService(
 	project ports.ProjectsService,
 	article ports.ArticlesService,
 	attachment ports.AttachmentsService,
+	bot ports.BotsService,
+	report ports.ReportsService,
+	generated_report ports.GeneratedReportsService,
 ) *DashboardService {
 	d := &DashboardService{
-		cfg:        cfg,
-		user:       user,
-		auth:       auth,
-		otp:        otp,
-		minio:      minio,
-		role:       role,
-		project:    project,
-		article:    article,
-		attachment: attachment,
+		cfg:              cfg,
+		user:             user,
+		auth:             auth,
+		otp:              otp,
+		minio:            minio,
+		role:             role,
+		project:          project,
+		article:          article,
+		attachment:       attachment,
+		bot:              bot,
+		report:           report,
+		generated_report: generated_report,
 	}
 
 	d.state = Created

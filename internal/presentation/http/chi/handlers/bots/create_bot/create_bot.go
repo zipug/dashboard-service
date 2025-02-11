@@ -1,4 +1,4 @@
-package getattachmentbyid
+package createbot
 
 import (
 	"dashboard/internal/application/dto"
@@ -6,15 +6,13 @@ import (
 	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
-	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type DashboardService interface {
-	GetBotById(int64, int64) (models.Bot, error)
+	CreateBot(models.Bot, int64) (int64, error)
 }
 
 type Logger interface {
@@ -25,7 +23,11 @@ type Auth interface {
 	GetClaims(*http.Request) map[string]interface{}
 }
 
-func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+type Resp struct {
+	Id int64 `json:"id"`
+}
+
+func CreateBot(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
@@ -34,17 +36,15 @@ func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
 			return
 		}
-		query_id := chi.URLParam(r, "id")
-		if query_id == "" {
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
-			return
-		}
-		id, err := strconv.ParseInt(query_id, 10, 64)
+		var req dto.BotDto
+		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
+			log.Log("error", "error while decoding request body", logger.WithErrAttr(err))
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while decoding request body"}})
 			return
 		}
-		attachment, err := app.GetBotById(id, int64(authUserId))
+		payload := req.ToValue()
+		id, err := app.CreateBot(payload, int64(authUserId))
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
@@ -53,6 +53,6 @@ func GetBotById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToBotDto(attachment)})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: Resp{Id: id}})
 	}
 }

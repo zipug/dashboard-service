@@ -5,11 +5,8 @@ import (
 	"dashboard/internal/common/service/auth"
 	"dashboard/internal/common/service/config"
 	l "dashboard/internal/common/service/logger/zerolog"
-	createrole "dashboard/internal/presentation/http/chi/handlers/roles/create_role"
-	deleterolebyid "dashboard/internal/presentation/http/chi/handlers/roles/delete_role_by_id"
-	getallroles "dashboard/internal/presentation/http/chi/handlers/roles/get_all_roles"
-	getrolebyid "dashboard/internal/presentation/http/chi/handlers/roles/get_role_by_id"
-	updaterole "dashboard/internal/presentation/http/chi/handlers/roles/update_role"
+	executereportbyid "dashboard/internal/presentation/http/chi/handlers/reports/execute_report_by_id"
+	getallreports "dashboard/internal/presentation/http/chi/handlers/reports/get_all_reports"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -36,18 +33,11 @@ func ReportsRouter(r chi.Router) func(
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "reports_feature:read")).
 				Group(func(r chi.Router) {
-					r.Get("/{id}", getrolebyid.GetRoleById(app, log))
-					r.Get("/all", getallroles.GetAllRoles(app, log))
+					r.Get("/all", getallreports.GetAllReports(app, log))
 				})
 			r.
-				With(guard.Can(auth.GetTokenAuth(), "reports_feature:create")).
-				Post("/create", createrole.CreateRole(app, log))
-			r.
 				With(guard.Can(auth.GetTokenAuth(), "reports_feature:update")).
-				Post("/update", updaterole.UpdateRole(app, log))
-			r.
-				With(guard.Can(auth.GetTokenAuth(), "reports_feature:delete")).
-				Delete("/{id}", deleterolebyid.DeleteRole(app, log))
+				Post("/execute", executereportbyid.ExecuteReport(app, log, auth))
 		})
 		return r
 	}
