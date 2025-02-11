@@ -8,11 +8,12 @@ import (
 )
 
 type BotsService struct {
-	repo ports.BotsRepository
+	repo  ports.BotsRepository
+	event ports.BotsEventRepository
 }
 
-func NewBotsService(repo ports.BotsRepository) *BotsService {
-	return &BotsService{repo: repo}
+func NewBotsService(repo ports.BotsRepository, event ports.BotsEventRepository) *BotsService {
+	return &BotsService{repo: repo, event: event}
 }
 
 func (s *BotsService) GetBotById(ctx context.Context, bot_id, user_id int64) (models.Bot, error) {
@@ -60,4 +61,12 @@ func (s *BotsService) DeleteBotById(ctx context.Context, bot_id, user_id int64) 
 
 func (s *BotsService) SetBotState(ctx context.Context, state models.BotState, bot_id, user_id int64) error {
 	return s.repo.SetBotState(ctx, string(state), bot_id, user_id)
+}
+
+func (s *BotsService) RunBot(ctx context.Context, bot models.Bot, user_id int64) error {
+	return s.event.PublishBotsEvent(ctx, bot, user_id, models.RUNNING)
+}
+
+func (s *BotsService) StopBot(ctx context.Context, bot models.Bot, user_id int64) error {
+	return s.event.PublishBotsEvent(ctx, bot, user_id, models.STOPPED)
 }

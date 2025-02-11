@@ -30,7 +30,7 @@ var (
 	projectsCoreService         = projects.NewProjectsService(postgresRepository)
 	articlesCoreService         = articles.NewArticlesService(postgresRepository)
 	attachmentsCoreService      = attachments.NewAttachmentsService(postgresRepository)
-	botsCoreService             = bots.NewBotsService(postgresRepository)
+	botsCoreService             = bots.NewBotsService(postgresRepository, redisRepository)
 	reportsCoreService          = reports.NewReportsService(postgresRepository, redisRepository)
 	generatedReportsCoreService = generatedreports.NewGeneratedReportsService(postgresRepository)
 	authModule                  = auth.New(configCommonService)

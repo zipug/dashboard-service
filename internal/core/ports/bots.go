@@ -13,6 +13,8 @@ type BotsService interface {
 	UpdateBotById(context.Context, models.Bot, int64) (models.Bot, error)
 	DeleteBotById(context.Context, int64, int64) error
 	SetBotState(context.Context, models.BotState, int64, int64) error
+	RunBot(context.Context, models.Bot, int64) error
+	StopBot(context.Context, models.Bot, int64) error
 }
 
 type BotsRepository interface {
@@ -22,4 +24,8 @@ type BotsRepository interface {
 	UpdateBotById(context.Context, dto.BotDbo, int64) (*dto.BotDbo, error)
 	DeleteBotById(context.Context, int64, int64) error
 	SetBotState(context.Context, string, int64, int64) error
+}
+
+type BotsEventRepository interface {
+	PublishBotsEvent(context.Context, models.Bot, int64, models.BotState) error
 }

@@ -1,17 +1,18 @@
-package setbotstatebyid
+package stopbotbyid
 
 import (
 	logger "dashboard/internal/common/service/logger/zerolog"
-	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type DashboardService interface {
-	SetBotState(models.BotState, int64, int64) error
+	StopBotById(int64, int64) error
 }
 
 type Logger interface {
@@ -22,12 +23,7 @@ type Auth interface {
 	GetClaims(*http.Request) map[string]interface{}
 }
 
-type Payload struct {
-	Id    int64  `json:"id"`
-	State string `json:"state"`
-}
-
-func SetBotState(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+func StopBot(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
@@ -36,25 +32,17 @@ func SetBotState(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
 			return
 		}
-		var req Payload
-		err := render.DecodeJSON(r.Body, &req)
+		query_id := chi.URLParam(r, "id")
+		if query_id == "" {
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
+			return
+		}
+		id, err := strconv.ParseInt(query_id, 10, 64)
 		if err != nil {
-			log.Log("error", "error while decoding request body", logger.WithErrAttr(err))
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while decoding request body"}})
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
 		}
-		var state models.BotState
-		switch req.State {
-		case "running":
-			state = models.RUNNING
-		case "stopped":
-			state = models.STOPPED
-		default:
-			log.Log("error", "invalid state", logger.WithErrAttr(err))
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid state"}})
-			return
-		}
-		if err := app.SetBotState(state, req.Id, int64(authUserId)); err != nil {
+		if err := app.StopBotById(id, int64(authUserId)); err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)

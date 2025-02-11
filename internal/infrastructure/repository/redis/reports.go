@@ -20,7 +20,7 @@ func (repo *RedisRepository) ExecuteReport(ctx context.Context, report_id, user_
 		Timestamp: time.Now().Unix(),
 		Payload: ReportsPayload{
 			ReportID: report_id,
-			UserID:   report_id,
+			UserID:   user_id,
 			DateFrom: date_from,
 			DateTo:   date_to,
 		},

@@ -20,7 +20,7 @@ func (repo *PostgresRepository) GetBotById(ctx context.Context, bot_id, user_id 
 		ctx,
 		repo.db,
 		`
-		SELECT b.id, b.name, b.description, b.icon, b.state, b.user_id
+		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id
 		FROM bots b
 		WHERE b.id = $1::bigint
 		  AND b.user_id = $2::bigint
@@ -43,7 +43,7 @@ func (repo *PostgresRepository) GetAllBots(ctx context.Context, user_id int64) (
 		ctx,
 		repo.db,
 		`
-		SELECT b.id, b.name, b.description, b.icon, b.state, b.user_id
+		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id
 		FROM bots b
 		WHERE b.user_id = $1::bigint
 		  AND b.deleted_at IS NULL;
@@ -64,10 +64,11 @@ func (repo *PostgresRepository) CreateBot(ctx context.Context, bot dto.BotDbo, u
 		ctx,
 		repo.db,
 		`
-		INSERT INTO bots (name, description, icon, state, user_id)
-		VALUES ($1::text, $2::text, $3::text, $4::text, $5::bigint)
+		INSERT INTO bots (project_id, name, description, icon, state, user_id)
+		VALUES ($1::bigint, $2::text, $3::text, $4::text, $5::text, $6::bigint)
 		RETURNING *;
 		`,
+		bot.ProjectId,
 		bot.Name,
 		bot.Description,
 		bot.Icon,
@@ -121,6 +122,7 @@ func (repo *PostgresRepository) DeleteBotById(ctx context.Context, bot_id, user_
 		LEFT JOIN user_roles ur ON b.user_id = ur.user_id
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE bots.id = $1::bigint
+		  AND bots.state != 'running'
 		  AND (b.user_id = $2::bigint OR r.name = 'admin');
 		`,
 		bot_id,

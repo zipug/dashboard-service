@@ -9,7 +9,8 @@ import (
 	deletebotbyid "dashboard/internal/presentation/http/chi/handlers/bots/delete_bot_by_id"
 	getallbots "dashboard/internal/presentation/http/chi/handlers/bots/get_all_bots"
 	getbotbyid "dashboard/internal/presentation/http/chi/handlers/bots/get_bot_by_id"
-	setbotstatebyid "dashboard/internal/presentation/http/chi/handlers/bots/set_bot_state_by_id"
+	runbotbyid "dashboard/internal/presentation/http/chi/handlers/bots/run_bot_by_id"
+	stopbotbyid "dashboard/internal/presentation/http/chi/handlers/bots/stop_bot_by_id"
 	updatebotbyid "dashboard/internal/presentation/http/chi/handlers/bots/update_bot_by_id"
 	"dashboard/pkg/middlewares/can"
 
@@ -47,7 +48,8 @@ func BotsRouter(r chi.Router) func(
 				With(guard.Can(auth.GetTokenAuth(), "bots_feature:update")).
 				Group(func(r chi.Router) {
 					r.Post("/update", updatebotbyid.UpdateBotById(app, log, auth))
-					r.Post("/set-state", setbotstatebyid.SetBotState(app, log, auth))
+					r.Post("/run/{id}", runbotbyid.RunBot(app, log, auth))
+					r.Post("/stop/{id}", stopbotbyid.StopBot(app, log, auth))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "bots_feature:delete")).

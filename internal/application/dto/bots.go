@@ -7,6 +7,7 @@ import (
 
 type BotDto struct {
 	Id          int64  `json:"id"`
+	ProjectId   int64  `json:"project_id"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	Icon        string `json:"icon,omitempty"`
@@ -15,9 +16,10 @@ type BotDto struct {
 
 type BotDbo struct {
 	Id          int64          `db:"id" json:"id"`
+	ProjectId   int64          `db:"project_id" json:"project_id"`
 	Name        string         `db:"name" json:"name"`
-	Description string         `db:"description,omitempty" json:"description,omitempty"`
-	Icon        string         `db:"icon,omitempty" json:"icon,omitempty"`
+	Description sql.NullString `db:"description,omitempty" json:"description,omitempty"`
+	Icon        sql.NullString `db:"icon,omitempty" json:"icon,omitempty"`
 	State       string         `db:"state" json:"state"`
 	UserID      int64          `db:"user_id" json:"user_id"`
 	CreatedAt   sql.NullString `db:"created_at,omitempty" json:"created_at,omitempty"`
@@ -28,6 +30,7 @@ type BotDbo struct {
 func (dto *BotDto) ToValue() models.Bot {
 	return models.Bot{
 		Id:          dto.Id,
+		ProjectId:   dto.ProjectId,
 		Name:        dto.Name,
 		Description: dto.Description,
 		Icon:        dto.Icon,
@@ -38,9 +41,10 @@ func (dto *BotDto) ToValue() models.Bot {
 func (dbo *BotDbo) ToValue() models.Bot {
 	return models.Bot{
 		Id:          dbo.Id,
+		ProjectId:   dbo.ProjectId,
 		Name:        dbo.Name,
-		Description: dbo.Description,
-		Icon:        dbo.Icon,
+		Description: dbo.Description.String,
+		Icon:        dbo.Icon.String,
 		State:       models.BotState(dbo.State),
 	}
 }
@@ -48,6 +52,7 @@ func (dbo *BotDbo) ToValue() models.Bot {
 func ToBotDto(m models.Bot) BotDto {
 	return BotDto{
 		Id:          m.Id,
+		ProjectId:   m.ProjectId,
 		Name:        m.Name,
 		Description: m.Description,
 		Icon:        m.Icon,
@@ -58,9 +63,10 @@ func ToBotDto(m models.Bot) BotDto {
 func ToBotDbo(m models.Bot) BotDbo {
 	return BotDbo{
 		Id:          m.Id,
+		ProjectId:   m.ProjectId,
 		Name:        m.Name,
-		Description: m.Description,
-		Icon:        m.Icon,
+		Description: sql.NullString{String: m.Description, Valid: true},
+		Icon:        sql.NullString{String: m.Icon, Valid: true},
 		State:       string(m.State),
 	}
 }

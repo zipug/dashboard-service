@@ -4,6 +4,7 @@ import (
 	"context"
 	logger "dashboard/internal/common/service/logger/zerolog"
 	"dashboard/internal/core/models"
+	"errors"
 )
 
 func (d *DashboardService) GetBotById(bot_id, user_id int64) (models.Bot, error) {
@@ -68,13 +69,52 @@ func (d *DashboardService) DeleteBotById(bot_id, user_id int64) error {
 	return nil
 }
 
-func (d *DashboardService) SetBotState(state models.BotState, bot_id, user_id int64) error {
+func (d *DashboardService) RunBotById(bot_id, user_id int64) error {
 	ctx := context.Background()
+	bot, err := d.GetBotById(bot_id, user_id)
+	if err != nil {
+		return err
+	}
+	if bot.State == models.RUNNING || bot.State == models.DELETED {
+		d.log.Log("error", "bot is already running or deleted", logger.WithInt64Attr("bot_id", bot_id))
+		return errors.New("bot is already running or deleted")
+	}
 	d.log.Log("info", "set bot state by id", logger.WithInt64Attr("bot_id", bot_id))
-	if err := d.bot.SetBotState(ctx, state, bot_id, user_id); err != nil {
+	if err := d.bot.SetBotState(ctx, models.RUNNING, bot_id, user_id); err != nil {
 		d.log.Log("error", "could not set bot state by id", logger.WithInt64Attr("bot_id", bot_id))
 		return err
 	}
 	d.log.Log("info", "bot state set by id", logger.WithInt64Attr("bot_id", bot_id))
+	d.log.Log("info", "run bot by id", logger.WithInt64Attr("bot_id", bot_id))
+	if err := d.bot.RunBot(ctx, bot, user_id); err != nil {
+		d.log.Log("error", "could not run bot by id", logger.WithInt64Attr("bot_id", bot_id))
+		return err
+	}
+	d.log.Log("info", "bot successfully runned by id", logger.WithInt64Attr("bot_id", bot_id))
+	return nil
+}
+
+func (d *DashboardService) StopBotById(bot_id, user_id int64) error {
+	ctx := context.Background()
+	bot, err := d.GetBotById(bot_id, user_id)
+	if err != nil {
+		return err
+	}
+	if bot.State == models.STOPPED || bot.State == models.DELETED {
+		d.log.Log("error", "bot is already stopped or deleted", logger.WithInt64Attr("bot_id", bot_id))
+		return errors.New("bot is already stopped or deleted")
+	}
+	d.log.Log("info", "set bot state by id", logger.WithInt64Attr("bot_id", bot_id))
+	if err := d.bot.SetBotState(ctx, models.STOPPED, bot_id, user_id); err != nil {
+		d.log.Log("error", "could not set bot state by id", logger.WithInt64Attr("bot_id", bot_id))
+		return err
+	}
+	d.log.Log("info", "bot state set by id", logger.WithInt64Attr("bot_id", bot_id))
+	d.log.Log("info", "stop bot by id", logger.WithInt64Attr("bot_id", bot_id))
+	if err := d.bot.StopBot(ctx, bot, user_id); err != nil {
+		d.log.Log("error", "could not stop bot by id", logger.WithInt64Attr("bot_id", bot_id))
+		return err
+	}
+	d.log.Log("info", "bot successfully stopped by id", logger.WithInt64Attr("bot_id", bot_id))
 	return nil
 }
