@@ -7,6 +7,7 @@ type Bot struct {
 	Description string
 	Icon        string
 	State       BotState
+	ApiToken    string
 }
 
 type BotState string

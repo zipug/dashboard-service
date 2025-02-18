@@ -15,6 +15,7 @@ type BotsPayload struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Icon        string `json:"icon"`
+	ApiToken    string
 }
 
 func (repo *RedisRepository) PublishBotsEvent(ctx context.Context, bot models.Bot, user_id int64, state models.BotState) error {
@@ -37,6 +38,7 @@ func (repo *RedisRepository) PublishBotsEvent(ctx context.Context, bot models.Bo
 			Name:        bot.Name,
 			Description: bot.Description,
 			Icon:        bot.Icon,
+			ApiToken:    bot.ApiToken,
 		},
 	}
 	message, err := json.Marshal(evt)

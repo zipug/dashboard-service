@@ -20,7 +20,7 @@ func (repo *PostgresRepository) GetBotById(ctx context.Context, bot_id, user_id 
 		ctx,
 		repo.db,
 		`
-		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id
+		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id, b.api_token
 		FROM bots b
 		WHERE b.id = $1::bigint
 		  AND b.user_id = $2::bigint
@@ -43,7 +43,7 @@ func (repo *PostgresRepository) GetAllBots(ctx context.Context, user_id int64) (
 		ctx,
 		repo.db,
 		`
-		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id
+		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id, b.api_token
 		FROM bots b
 		WHERE b.user_id = $1::bigint
 		  AND b.deleted_at IS NULL;
@@ -64,8 +64,8 @@ func (repo *PostgresRepository) CreateBot(ctx context.Context, bot dto.BotDbo, u
 		ctx,
 		repo.db,
 		`
-		INSERT INTO bots (project_id, name, description, icon, state, user_id)
-		VALUES ($1::bigint, $2::text, $3::text, $4::text, $5::text, $6::bigint)
+		INSERT INTO bots (project_id, name, description, icon, state, user_id, api_token)
+		VALUES ($1::bigint, $2::text, $3::text, $4::text, $5::text, $6::bigint, $7::text)
 		RETURNING *;
 		`,
 		bot.ProjectId,
@@ -74,6 +74,7 @@ func (repo *PostgresRepository) CreateBot(ctx context.Context, bot dto.BotDbo, u
 		bot.Icon,
 		bot.State,
 		user_id,
+		bot.ApiToken,
 	)
 	if err != nil {
 		return 0, err
@@ -92,14 +93,16 @@ func (repo *PostgresRepository) UpdateBotById(ctx context.Context, bot dto.BotDb
     UPDATE bots
 		SET name = $1::text,
 		    description = $2::text,
-		    icon = $3::text
-		WHERE id = $4::bigint
-		  AND user_id = $5::bigint
+		    icon = $3::text,
+		    api_token = $4::text
+		WHERE id = $5::bigint
+		  AND user_id = $6::bigint
 		RETURNING *;
 		`,
 		bot.Name,
 		bot.Description,
 		bot.Icon,
+		bot.ApiToken,
 		bot.Id,
 		user_id,
 	)
