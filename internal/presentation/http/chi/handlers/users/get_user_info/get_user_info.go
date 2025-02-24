@@ -13,6 +13,7 @@ import (
 
 type DashboardService interface {
 	GetUserById(id int64) (models.User, error)
+	GetRoleByUserId(user_id int64) (models.Role, error)
 }
 
 type Logger interface {
@@ -25,6 +26,7 @@ type Auth interface {
 
 func GetUserInfo(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -39,9 +41,15 @@ func GetUserInfo(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, resp)
 			return
 		}
+		role, err := app.GetRoleByUserId(int64(authUserId))
+		if err != nil {
+			errs := strings.Split(err.Error(), "\n")
+			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
+			render.JSON(w, r, resp)
+			return
+		}
 		userDto := dto.ToSafeUserDto(user)
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
+		userDto.Role = dto.ToRoleDto(role)
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: userDto})
 	}
 }

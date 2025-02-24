@@ -90,9 +90,9 @@ func (u *UserService) VerifyUser(ctx context.Context, user_id models.Id) error {
 	return nil
 }
 
-func (u *UserService) SaveUser(ctx context.Context, user models.User) (models.User, error) {
+func (u *UserService) SaveUser(ctx context.Context, user models.User, user_id int64) (models.User, error) {
 	dbo := dto.ToUserDbo(user)
-	updated_dbo, err := u.repo.SaveUser(ctx, dbo)
+	updated_dbo, err := u.repo.SaveUser(ctx, dbo, user_id)
 	if err != nil {
 		return models.User{}, err
 	}

@@ -21,6 +21,7 @@ type Logger interface {
 
 func CreateArticle(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		var req dto.ArticleDto
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
@@ -35,8 +36,6 @@ func CreateArticle(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: project_id})
 	}
 }

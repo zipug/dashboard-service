@@ -33,6 +33,7 @@ type RegisterResponse struct {
 
 func LoginUser(app DashboardService, log Logger, auth Auth, accessTokenExp time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		var req dto.UserDto
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
@@ -60,8 +61,6 @@ func LoginUser(app DashboardService, log Logger, auth Auth, accessTokenExp time.
 			return
 		}
 		authToken := dto.AuthenticateDto{Token: token}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: authToken})
 	}
 }

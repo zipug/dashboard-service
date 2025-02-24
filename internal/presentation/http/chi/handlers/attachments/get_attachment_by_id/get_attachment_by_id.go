@@ -27,6 +27,7 @@ type Auth interface {
 
 func GetAttachmentById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -51,8 +52,6 @@ func GetAttachmentById(app DashboardService, log Logger, auth Auth) http.Handler
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToAttachmentDto(attachment)})
 	}
 }

@@ -6,12 +6,13 @@ import (
 )
 
 type PermissionDto struct {
-	Id       int64  `json:"id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	DoCreate bool   `json:"do_create,omitempty"`
-	DoUpdate bool   `json:"do_update,omitempty"`
-	DoRead   bool   `json:"do_read,omitempty"`
-	DoDelete bool   `json:"do_delete,omitempty"`
+	Id          int64  `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	DoCreate    bool   `json:"do_create"`
+	DoUpdate    bool   `json:"do_update"`
+	DoRead      bool   `json:"do_read"`
+	DoDelete    bool   `json:"do_delete"`
 }
 
 type RoleDto struct {
@@ -31,10 +32,16 @@ type RolesDbo struct {
 	DeleteAt    sql.NullString `db:"deleted_at,omitempty"`
 }
 
+type UserRolesDbo struct {
+	UserId int64 `db:"user_id"`
+	RoleId int64 `db:"role_id"`
+}
+
 type RolePermissionDbo struct {
 	RoleId       int64          `db:"role_id,omitempty"`
 	PermissionId int64          `db:"permission_id,omitempty"`
 	Name         sql.NullString `db:"name,omitempty"`
+	Description  sql.NullString `db:"description,omitempty"`
 	DoCreate     bool           `db:"do_create"`
 	DoRead       bool           `db:"do_read"`
 	DoUpdate     bool           `db:"do_update"`
@@ -54,11 +61,12 @@ func ToPermissionDto(p []models.PermissionData) []PermissionDto {
 	result := make([]PermissionDto, 0)
 	for _, perm := range p {
 		result = append(result, PermissionDto{
-			Name:     perm.Name,
-			DoCreate: perm.Create,
-			DoRead:   perm.Read,
-			DoUpdate: perm.Update,
-			DoDelete: perm.Delete,
+			Name:        perm.Name,
+			Description: perm.Description,
+			DoCreate:    perm.Create,
+			DoRead:      perm.Read,
+			DoUpdate:    perm.Update,
+			DoDelete:    perm.Delete,
 		})
 	}
 	return result
@@ -77,11 +85,12 @@ func ToRolePermissionDbo(p []models.PermissionData) []RolePermissionDbo {
 	result := make([]RolePermissionDbo, 0)
 	for _, perm := range p {
 		result = append(result, RolePermissionDbo{
-			Name:     sql.NullString{String: perm.Name, Valid: true},
-			DoCreate: perm.Create,
-			DoRead:   perm.Read,
-			DoUpdate: perm.Update,
-			DoDelete: perm.Delete,
+			Name:        sql.NullString{String: perm.Name, Valid: true},
+			Description: sql.NullString{String: perm.Description, Valid: true},
+			DoCreate:    perm.Create,
+			DoRead:      perm.Read,
+			DoUpdate:    perm.Update,
+			DoDelete:    perm.Delete,
 		})
 	}
 	return result
@@ -89,23 +98,25 @@ func ToRolePermissionDbo(p []models.PermissionData) []RolePermissionDbo {
 
 func (pd *PermissionDto) ToValue() models.PermissionData {
 	return models.PermissionData{
-		Id:     pd.Id,
-		Name:   pd.Name,
-		Create: pd.DoCreate,
-		Read:   pd.DoRead,
-		Update: pd.DoUpdate,
-		Delete: pd.DoDelete,
+		Id:          pd.Id,
+		Name:        pd.Name,
+		Description: pd.Description,
+		Create:      pd.DoCreate,
+		Read:        pd.DoRead,
+		Update:      pd.DoUpdate,
+		Delete:      pd.DoDelete,
 	}
 }
 
 func (pd *RolePermissionDbo) ToValue() models.PermissionData {
 	return models.PermissionData{
-		Id:     pd.PermissionId,
-		Name:   pd.Name.String,
-		Create: pd.DoCreate,
-		Read:   pd.DoRead,
-		Update: pd.DoUpdate,
-		Delete: pd.DoDelete,
+		Id:          pd.PermissionId,
+		Name:        pd.Name.String,
+		Description: pd.Description.String,
+		Create:      pd.DoCreate,
+		Read:        pd.DoRead,
+		Update:      pd.DoUpdate,
+		Delete:      pd.DoDelete,
 	}
 }
 
@@ -113,11 +124,12 @@ func (rd *RoleDto) ToValue() models.Role {
 	var perms []models.PermissionData
 	for _, perm := range rd.Permissions {
 		perms = append(perms, models.PermissionData{
-			Name:   perm.Name,
-			Create: perm.DoCreate,
-			Read:   perm.DoRead,
-			Update: perm.DoUpdate,
-			Delete: perm.DoDelete,
+			Name:        perm.Name,
+			Description: perm.Description,
+			Create:      perm.DoCreate,
+			Read:        perm.DoRead,
+			Update:      perm.DoUpdate,
+			Delete:      perm.DoDelete,
 		})
 	}
 	return models.Role{
@@ -132,11 +144,12 @@ func (rd *RolesDbo) ToValue() models.Role {
 	var perms []models.PermissionData
 	for _, perm := range rd.Permissions {
 		perms = append(perms, models.PermissionData{
-			Name:   perm.Name.String,
-			Create: perm.DoCreate,
-			Read:   perm.DoRead,
-			Update: perm.DoUpdate,
-			Delete: perm.DoDelete,
+			Name:        perm.Name.String,
+			Description: perm.Description.String,
+			Create:      perm.DoCreate,
+			Read:        perm.DoRead,
+			Update:      perm.DoUpdate,
+			Delete:      perm.DoDelete,
 		})
 	}
 	return models.Role{

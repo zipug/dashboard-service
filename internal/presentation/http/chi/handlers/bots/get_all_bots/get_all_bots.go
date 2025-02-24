@@ -25,6 +25,7 @@ type Auth interface {
 
 func GetAllBots(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
 		if !ok {
@@ -43,8 +44,6 @@ func GetAllBots(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 		for _, bot := range bots {
 			resp = append(resp, dto.ToBotDto(bot))
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: resp})
 	}
 }

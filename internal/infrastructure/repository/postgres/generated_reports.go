@@ -18,10 +18,12 @@ func (repo *PostgresRepository) GetGeneratedReportById(ctx context.Context, gene
 		ctx,
 		repo.db,
 		`
-		SELECT id, user_id, report_id, object_id, content::text, date_from, date_to
+		SELECT g.id, g.user_id, g.report_id, g.object_id, g.content::text, g.date_from, g.date_to
 		FROM generated_reports g
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
+		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE g.id = $1::bigint
-		  AND g.user_id = $2::bigint
+		  AND (g.user_id = $2::bigint OR r.name = 'admin')
 		  AND g.deleted_at IS NULL;
 		`,
 		generated_report_id,
@@ -41,9 +43,11 @@ func (repo *PostgresRepository) GetAllGeneratedReports(ctx context.Context, user
 		ctx,
 		repo.db,
 		`
-		SELECT id, user_id, report_id, object_id, content::text, date_from, date_to
+		SELECT g.id, g.user_id, g.report_id, g.object_id, g.content::text, g.date_from, g.date_to
 		FROM generated_reports g
-		WHERE g.user_id = $1::bigint
+		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE (g.user_id = $1::bigint OR r.name = 'admin')
 		  AND g.deleted_at IS NULL;
 		`,
 		user_id,
@@ -64,7 +68,7 @@ func (repo *PostgresRepository) DeleteGeneratedReport(ctx context.Context, gener
 		`
 		DELETE FROM generated_reports
 		USING generated_reports AS g
-		LEFT JOIN user_roles ur ON g.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE generated_reports.id = $1::bigint
 		  AND (g.user_id = $2::bigint OR r.name = 'admin');

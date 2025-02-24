@@ -20,6 +20,7 @@ type Logger interface {
 
 func GrantRoleToUser(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		if r.URL.Query().Get("user_id") == "" || r.URL.Query().Get("role_id") == "" {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
 			return
@@ -42,8 +43,6 @@ func GrantRoleToUser(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success})
 	}
 }

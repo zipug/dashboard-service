@@ -11,7 +11,7 @@ import (
 )
 
 type DashboardService interface {
-	SaveUser(dto.UpdateUserDto) (models.User, error)
+	SaveUser(dto.UpdateUserDto, int64) (models.User, error)
 }
 
 type Logger interface {
@@ -25,7 +25,6 @@ type Auth interface {
 func SaveUser(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 
 		authClaims := auth.GetClaims(r)
 		authUserId, ok := authClaims["user_id"].(float64)
@@ -41,8 +40,7 @@ func SaveUser(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while decoding request body"}})
 			return
 		}
-		req.Id = int64(authUserId)
-		user, err := app.SaveUser(req)
+		user, err := app.SaveUser(req, int64(authUserId))
 		if err != nil {
 			resp := handlers.Response{Status: handlers.Failed, Errors: []string{"failed to save user info"}}
 			render.JSON(w, r, resp)

@@ -19,12 +19,13 @@ type Permission struct {
 }
 
 type PermissionData struct {
-	Id     int64
-	Name   string
-	Create bool
-	Read   bool
-	Update bool
-	Delete bool
+	Id          int64
+	Name        string
+	Description string
+	Create      bool
+	Read        bool
+	Update      bool
+	Delete      bool
 }
 
 func ToPermission(perm string) Permission {

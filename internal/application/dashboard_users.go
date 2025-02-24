@@ -56,7 +56,7 @@ func (d *DashboardService) GetAllUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (d *DashboardService) SaveUser(user dto.UpdateUserDto) (models.User, error) {
+func (d *DashboardService) SaveUser(user dto.UpdateUserDto, user_id int64) (models.User, error) {
 	d.log.Log(
 		"info",
 		"saving user",
@@ -64,7 +64,7 @@ func (d *DashboardService) SaveUser(user dto.UpdateUserDto) (models.User, error)
 		logger.WithInt64Attr("id", int64(user.Id)),
 	)
 	ctx := context.Background()
-	usr, err := d.user.SaveUser(ctx, user.ToValue())
+	usr, err := d.user.SaveUser(ctx, user.ToValue(), user_id)
 	if err != nil {
 		d.log.Log("error", "error occured while saving user", logger.WithErrAttr(err))
 		return usr, err

@@ -20,11 +20,13 @@ func (repo *PostgresRepository) GetAttachmentById(ctx context.Context, attachmen
 		ctx,
 		repo.db,
 		`
-		SELECT id, name, description, object_id, mimetype, user_id
-		FROM attachments
-		WHERE id = $1::bigint
-		  AND user_id = $2::bigint
-		  AND deleted_at IS NULL;
+		SELECT a.id, a.name, a.description, a.object_id, a.mimetype, a.user_id
+		FROM attachments a
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE a.id = $1::bigint
+		  AND (a.user_id = $2::bigint OR r.name = 'admin')
+		  AND a.deleted_at IS NULL;
 		`,
 		attachment_id,
 		user_id,
@@ -43,10 +45,12 @@ func (repo *PostgresRepository) GetAllAttachments(ctx context.Context, user_id i
 		ctx,
 		repo.db,
 		`
-		SELECT id, name, description, object_id, mimetype, user_id
-		FROM attachments
-		WHERE user_id = $1::bigint
-		  AND deleted_at IS NULL;
+		SELECT a.id, a.name, a.description, a.object_id, a.mimetype, a.user_id
+		FROM attachments a
+		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE (a.user_id = $1::bigint OR r.name = 'admin')
+		  AND a.deleted_at IS NULL;
 		`,
 		user_id,
 	)
@@ -137,7 +141,7 @@ func (repo *PostgresRepository) DeleteAttachment(ctx context.Context, attachment
 		DELETE FROM attachments_articles
 		USING attachments_articles AS a
 		LEFT JOIN attachments aa ON a.attachment_id = aa.id
-		LEFT JOIN user_roles ur ON aa.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE attachments_articles.attachment_id = $1::bigint
 		  AND (aa.user_id = $2::bigint OR r.name = 'admin');
@@ -155,7 +159,7 @@ func (repo *PostgresRepository) DeleteAttachment(ctx context.Context, attachment
 		`
 		DELETE FROM attachments
 		USING attachments AS a
-		LEFT JOIN user_roles ur ON a.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE attachments.id = $1::bigint
 		  AND (a.user_id = $2::bigint OR r.name = 'admin');

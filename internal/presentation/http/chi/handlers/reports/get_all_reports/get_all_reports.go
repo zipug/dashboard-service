@@ -22,7 +22,6 @@ type Logger interface {
 func GetAllReports(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		reports, err := app.GetAllReports()
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")

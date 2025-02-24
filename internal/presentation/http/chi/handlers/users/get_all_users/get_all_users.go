@@ -13,6 +13,7 @@ import (
 
 type DashboardService interface {
 	GetAllUsers() ([]models.User, error)
+	GetRoleByUserId(user_id int64) (models.Role, error)
 }
 
 type Logger interface {
@@ -21,6 +22,7 @@ type Logger interface {
 
 func GetAllUsers(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		users, err := app.GetAllUsers()
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
@@ -28,12 +30,19 @@ func GetAllUsers(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, resp)
 			return
 		}
-		var resp []dto.SafeUserDto
+		var resp []dto.UserDto
 		for _, user := range users {
-			resp = append(resp, dto.ToSafeUserDto(user))
+			role, err := app.GetRoleByUserId(int64(user.Id))
+			if err != nil {
+				errs := strings.Split(err.Error(), "\n")
+				resp := handlers.Response{Status: handlers.Failed, Errors: errs}
+				render.JSON(w, r, resp)
+				return
+			}
+			dtoUser := dto.ToUserDto(user)
+			dtoUser.Role = dto.ToRoleDto(role)
+			resp = append(resp, dtoUser)
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: resp})
 	}
 }

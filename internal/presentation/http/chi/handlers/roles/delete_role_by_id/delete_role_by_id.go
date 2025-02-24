@@ -21,7 +21,6 @@ type Logger interface {
 func DeleteRole(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		query_id := chi.URLParam(r, "id")
 		if query_id == "" {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})

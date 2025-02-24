@@ -8,12 +8,13 @@ import (
 )
 
 var (
-	ErrGetRoleById = errors.New("could not get role by id")
-	ErrGetRoles    = errors.New("could not get roles")
-	ErrCreateRole  = errors.New("could not create role")
-	ErrUpdateRole  = errors.New("could not update role")
-	ErrUpdatePerms = errors.New("could not update role permissions")
-	ErrDeleteRole  = errors.New("could not delete role")
+	ErrGetRoleById     = errors.New("could not get role by id")
+	ErrGetRoleByUserId = errors.New("could not get role by user id")
+	ErrGetRoles        = errors.New("could not get roles")
+	ErrCreateRole      = errors.New("could not create role")
+	ErrUpdateRole      = errors.New("could not update role")
+	ErrUpdatePerms     = errors.New("could not update role permissions")
+	ErrDeleteRole      = errors.New("could not delete role")
 )
 
 func (repo *PostgresRepository) GetRoleById(ctx context.Context, role_id int64) (*dto.RolesDbo, error) {
@@ -37,7 +38,7 @@ func (repo *PostgresRepository) GetRoleById(ctx context.Context, role_id int64) 
 		ctx,
 		repo.db,
 		`
-		SELECT p.name, rp.do_create, rp.do_read, rp.do_update, rp.do_delete
+		SELECT p.name, p.description, rp.do_create, rp.do_read, rp.do_update, rp.do_delete
 		FROM role_permissions rp
 		LEFT JOIN permissions p ON rp.permission_id = p.id
 		WHERE rp.role_id = $1::bigint;
@@ -53,6 +54,26 @@ func (repo *PostgresRepository) GetRoleById(ctx context.Context, role_id int64) 
 	role := role_rows[0]
 	role.Permissions = perms_rows
 	return &role, nil
+}
+
+func (repo *PostgresRepository) GetRoleByUserId(ctx context.Context, user_id int64) (*dto.RolesDbo, error) {
+	role_user_rows, err := pu.Dispatch[dto.UserRolesDbo](
+		ctx,
+		repo.db,
+		`
+		SELECT user_id, role_id
+		FROM user_roles
+		WHERE user_id = $1::bigint;
+		`,
+		user_id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(role_user_rows) == 0 {
+		return nil, ErrGetRoleByUserId
+	}
+	return repo.GetRoleById(ctx, role_user_rows[0].RoleId)
 }
 
 func (repo *PostgresRepository) GetAllRoles(ctx context.Context) ([]dto.RolesDbo, error) {
@@ -75,7 +96,7 @@ func (repo *PostgresRepository) GetAllRoles(ctx context.Context) ([]dto.RolesDbo
 		ctx,
 		repo.db,
 		`
-		SELECT rp.role_id, p.name, rp.do_create, rp.do_read, rp.do_update, rp.do_delete
+		SELECT rp.role_id, p.name, p.description, rp.do_create, rp.do_read, rp.do_update, rp.do_delete
 		FROM role_permissions rp
 		LEFT JOIN permissions p ON rp.permission_id = p.id
 		`,
@@ -86,10 +107,10 @@ func (repo *PostgresRepository) GetAllRoles(ctx context.Context) ([]dto.RolesDbo
 	if len(perms_rows) == 0 {
 		return nil, ErrGetRoles
 	}
-	for _, role := range role_rows {
-		for _, perm := range perms_rows {
-			if role.Id == perm.RoleId {
-				role.Permissions = append(role.Permissions, perm)
+	for i := range role_rows {
+		for j := range perms_rows {
+			if role_rows[i].Id == perms_rows[j].RoleId {
+				role_rows[i].Permissions = append(role_rows[i].Permissions, perms_rows[j])
 			}
 		}
 	}

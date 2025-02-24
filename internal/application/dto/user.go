@@ -20,6 +20,7 @@ type UserDto struct {
 	Name           string       `json:"name,omitempty"`
 	LastName       string       `json:"lastname,omitempty"`
 	AvatarUrl      string       `json:"avatar_url,omitempty"`
+	Role           RoleDto      `json:"role,omitempty"`
 }
 
 //go:generate ../../../cmd/generator/main.go
@@ -48,8 +49,9 @@ type SafeUserDto struct {
 	State     models.State `json:"state,omitempty"`
 	Email     string       `json:"email,omitempty"`
 	Name      string       `json:"name,omitempty"`
-	LastName  string       `json:"last_name,omitempty"`
+	LastName  string       `json:"lastname,omitempty"`
 	AvatarUrl string       `json:"avatar_url,omitempty"`
+	Role      RoleDto      `json:"role,omitempty"`
 }
 
 type VerifyUserDto struct {
@@ -93,6 +95,7 @@ func (dbo *UserDbo) ToValue() models.User {
 
 func ToUserDto(user models.User) UserDto {
 	return UserDto{
+		Id:             int64(user.Id),
 		State:          user.State,
 		Email:          string(user.Email),
 		Password:       string(user.Password),

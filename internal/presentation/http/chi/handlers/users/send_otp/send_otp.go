@@ -20,7 +20,6 @@ type Logger interface {
 func SendOTP(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 
 		var req dto.UserDto
 		if err := render.DecodeJSON(r.Body, &req); err != nil {

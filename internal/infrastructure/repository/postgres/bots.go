@@ -22,8 +22,10 @@ func (repo *PostgresRepository) GetBotById(ctx context.Context, bot_id, user_id 
 		`
 		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id, b.api_token
 		FROM bots b
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
+		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE b.id = $1::bigint
-		  AND b.user_id = $2::bigint
+		  AND (b.user_id = $2::bigint OR r.name = 'admin')
 		  AND b.deleted_at IS NULL;
 		`,
 		bot_id,
@@ -45,7 +47,9 @@ func (repo *PostgresRepository) GetAllBots(ctx context.Context, user_id int64) (
 		`
 		SELECT b.id, b.project_id, b.name, b.description, b.icon, b.state, b.user_id, b.api_token
 		FROM bots b
-		WHERE b.user_id = $1::bigint
+		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
+		LEFT JOIN roles r ON ur.role_id = r.id
+		WHERE (b.user_id = $1::bigint OR r.name = 'admin')
 		  AND b.deleted_at IS NULL;
 		`,
 		user_id,
@@ -122,7 +126,7 @@ func (repo *PostgresRepository) DeleteBotById(ctx context.Context, bot_id, user_
 		`
 		DELETE FROM bots
 		USING bots AS b
-		LEFT JOIN user_roles ur ON b.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE bots.id = $1::bigint
 		  AND bots.state != 'running'

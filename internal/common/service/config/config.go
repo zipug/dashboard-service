@@ -58,6 +58,7 @@ type Server struct {
 	WriteTimeout       time.Duration `toml:"write_timeout" env:"WRITE_TIMEOUT" env-default:"5s"`
 	IdleTimeout        time.Duration `toml:"idle_timeout" env:"IDLE_TIMEOUT" env-default:"60s"`
 	MaxParallelWorkers int           `toml:"max_parallel_workers" env:"MAX_PARALLEL_WORKERS" env-default:"3"`
+	FrontEndUrl        string        `toml:"front_end_url" env:"FRONT_END_URL" env-default:"http://localhost:5173"`
 }
 
 type OTP struct {

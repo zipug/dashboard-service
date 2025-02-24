@@ -25,6 +25,15 @@ func (r *RolesService) GetRoleById(ctx context.Context, role_id int64) (models.R
 	return role, nil
 }
 
+func (r *RolesService) GetRoleByUserId(ctx context.Context, user_id int64) (models.Role, error) {
+	roleDbo, err := r.repo.GetRoleByUserId(ctx, user_id)
+	if err != nil {
+		return models.Role{}, err
+	}
+	role := roleDbo.ToValue()
+	return role, nil
+}
+
 func (r *RolesService) GetAllRoles(ctx context.Context) ([]models.Role, error) {
 	rolesDbo, err := r.repo.GetAllRoles(ctx)
 	if err != nil {

@@ -18,6 +18,18 @@ func (d *DashboardService) GetRoleById(role_id int64) (models.Role, error) {
 	return role, nil
 }
 
+func (d *DashboardService) GetRoleByUserId(user_id int64) (models.Role, error) {
+	ctx := context.Background()
+	d.log.Log("info", "getting role by user_id", logger.WithInt64Attr("user_id", user_id))
+	role, err := d.role.GetRoleByUserId(ctx, user_id)
+	if err != nil {
+		d.log.Log("error", "error while getting role by user_id", logger.WithErrAttr(err))
+		return role, err
+	}
+	d.log.Log("info", "role successfully get", logger.WithStrAttr("user_id", role.Name))
+	return role, nil
+}
+
 func (d *DashboardService) GetAllRoles() ([]models.Role, error) {
 	ctx := context.Background()
 	d.log.Log("info", "getting all roles")

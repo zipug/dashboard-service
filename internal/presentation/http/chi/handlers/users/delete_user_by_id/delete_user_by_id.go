@@ -21,6 +21,7 @@ type Logger interface {
 
 func DeleteUserById(app DashboardService, log Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		query_id := chi.URLParam(r, "id")
 		if query_id == "" {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
@@ -37,8 +38,6 @@ func DeleteUserById(app DashboardService, log Logger) http.HandlerFunc {
 			render.JSON(w, r, resp)
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		render.JSON(w, r, handlers.Response{Status: handlers.Success})
 	}
 }

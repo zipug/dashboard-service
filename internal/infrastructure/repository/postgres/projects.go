@@ -46,7 +46,7 @@ func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id, 
 					 )::text AS content
 		FROM projects p
 		LEFT JOIN articles a ON p.id = a.project_id
-		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE p.id = $1::bigint
 		  AND (p.user_id = $2::bigint OR r.name = 'admin')
@@ -111,11 +111,11 @@ func (repo *PostgresRepository) GetAllProjects(ctx context.Context, user_id int6
 					 )::text AS content
 		FROM projects p
 		LEFT JOIN articles a ON p.id = a.project_id
-		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE p.deleted_at IS NULL
 		  AND a.deleted_at IS NULL
-		  AND (a.user_id = $1::bigint OR r.name = 'admin');
+		  AND (p.user_id = $1::bigint OR r.name = 'admin');
 		`,
 		user_id,
 	)
@@ -240,7 +240,7 @@ func (repo *PostgresRepository) DeleteProject(ctx context.Context, project_id, u
 		`
 		DELETE FROM projects
 		USING projects AS p
-		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE projects.id = $1::bigint
 		  AND (p.user_id = $2::bigint OR r.name = 'admin');

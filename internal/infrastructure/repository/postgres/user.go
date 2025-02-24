@@ -148,26 +148,36 @@ func (repo *PostgresRepository) SetUserState(ctx context.Context, id int64, stat
 	return nil
 }
 
-func (repo *PostgresRepository) SaveUser(ctx context.Context, user dto.UserDbo) (*dto.UserDbo, error) {
+func (repo *PostgresRepository) SaveUser(ctx context.Context, user dto.UserDbo, user_id int64) (*dto.UserDbo, error) {
 	usr_rows, err := pu.Dispatch[dto.UserDbo](
 		ctx,
 		repo.db,
 		`
-		UPDATE users
-		SET email = $1::text,
-		    name = $2::text,
-		    lastname = $3::text,
-		    avatar_url = $4::text,
-			  update_at = NOW()
-		WHERE id = $5::bigint
-		  AND deleted_at IS NULL
-		RETURNING *;
+		WITH data(id, email, name, lastname, avatar_url) AS (
+		  SELECT $1::bigint, $2::text, $3::text, $4::text, $5::text
+		)
+		UPDATE users u
+		SET email      = COALESCE(NULLIF(t.user_email, email), email),
+			  name       = COALESCE(NULLIF(t.user_name, name), name),
+			  lastname   = COALESCE(NULLIF(t.user_lastname, lastname), lastname),
+			  avatar_url = COALESCE(NULLIF(t.user_avatar_url, avatar_url), avatar_url),
+			  updated_at = NOW()
+		FROM (
+		SELECT d.id, d.email, d.name, d.lastname, d.avatar_url, $6::bigint, r.name
+			FROM data d
+			LEFT JOIN user_roles ur ON ur.user_id = $6::bigint
+			JOIN roles r ON r.id = ur.role_id
+		) AS t(user_id, user_email, user_name, user_lastname, user_avatar_url, update_user_id, role_name)
+		WHERE u.id = t.user_id
+			AND (u.id = t.update_user_id OR t.role_name = 'admin')
+		RETURNING u.*;
 		`,
+		user.Id,
 		user.Email,
 		user.Name,
 		user.LastName,
 		user.AvatarUrl,
-		user.Id,
+		user_id,
 	)
 	if err != nil {
 		return nil, err

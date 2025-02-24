@@ -6,6 +6,7 @@ import (
 )
 
 type ReportDto struct {
+	Id          int64  `json:"id,omitempty"`
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	Icon        string `json:"icon,omitempty"`
@@ -23,6 +24,7 @@ type ReportDbo struct {
 
 func (dto *ReportDto) ToValue() models.Report {
 	return models.Report{
+		Id:          dto.Id,
 		Name:        dto.Name,
 		Description: dto.Description,
 		Icon:        dto.Icon,
@@ -31,6 +33,7 @@ func (dto *ReportDto) ToValue() models.Report {
 
 func (dbo *ReportDbo) ToValue() models.Report {
 	return models.Report{
+		Id:          dbo.Id,
 		Name:        dbo.Name,
 		Description: dbo.Description,
 		Icon:        dbo.Icon,
@@ -39,6 +42,7 @@ func (dbo *ReportDbo) ToValue() models.Report {
 
 func ToReportDto(m models.Report) ReportDto {
 	return ReportDto{
+		Id:          m.Id,
 		Name:        m.Name,
 		Description: m.Description,
 		Icon:        m.Icon,
@@ -47,6 +51,7 @@ func ToReportDto(m models.Report) ReportDto {
 
 func ToReportDbo(m models.Report) ReportDbo {
 	return ReportDbo{
+		Id:          m.Id,
 		Name:        m.Name,
 		Description: m.Description,
 		Icon:        m.Icon,

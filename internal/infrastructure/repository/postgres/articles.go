@@ -27,7 +27,7 @@ func (repo *PostgresRepository) GetArticleById(ctx context.Context, article_id, 
 					 a.project_id
 		FROM articles a
 		LEFT JOIN projects p ON a.project_id = p.id
-		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE a.id = $1::bigint
 		  AND a.deleted_at IS NULL
@@ -58,7 +58,7 @@ func (repo *PostgresRepository) GetAllArticles(ctx context.Context, user_id int6
 					 a.project_id
 		FROM articles a
 		LEFT JOIN projects p ON a.project_id = p.id
-		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE a.deleted_at IS NULL
 		  AND (p.user_id = $1::bigint OR r.name = 'admin');
@@ -111,7 +111,7 @@ func (repo *PostgresRepository) UpdateArticle(ctx context.Context, article dto.A
 			SELECT at.id, at.name, at.description, at.content, at.project_id
 			FROM articles at
 			LEFT JOIN projects p ON at.project_id = p.id
-			LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $6::bigint
 			LEFT JOIN roles r ON ur.role_id = r.id
 			WHERE at.id = $5::bigint
 		    AND (p.user_id = $6::bigint OR r.name = 'admin')
@@ -144,7 +144,7 @@ func (repo *PostgresRepository) DeleteArticle(ctx context.Context, article_id, u
 		DELETE FROM articles
 		USING articles AS a
 		LEFT JOIN projects p ON a.project_id = p.id
-		LEFT JOIN user_roles ur ON p.user_id = ur.user_id
+		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
 		WHERE articles.id = $1::bigint
 		  AND (p.user_id = $2::bigint OR r.name = 'admin');

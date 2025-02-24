@@ -27,6 +27,7 @@ type Auth interface {
 
 func RegisterUser(app DashboardService, log Logger, auth Auth, accessTokenExp time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
 		var req dto.UserDto
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
@@ -58,8 +59,6 @@ func RegisterUser(app DashboardService, log Logger, auth Auth, accessTokenExp ti
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"something went wrong"}})
 			return
 		}
-		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 
 		authToken := dto.AuthenticateDto{Token: token}
 		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: authToken})
