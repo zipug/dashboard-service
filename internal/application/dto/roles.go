@@ -20,6 +20,7 @@ type RoleDto struct {
 	Name        string          `json:"name,omitempty"`
 	Description string          `json:"description,omitempty"`
 	Permissions []PermissionDto `json:"permissions,omitempty"`
+	IsCustom    bool            `json:"is_custom"`
 }
 
 type RolesDbo struct {
@@ -30,6 +31,7 @@ type RolesDbo struct {
 	CreatedAt   string         `db:"created_at,omitempty"`
 	UpdateAt    string         `db:"updated_at,omitempty"`
 	DeleteAt    sql.NullString `db:"deleted_at,omitempty"`
+	IsCustom    bool           `db:"is_custom"`
 }
 
 type UserRolesDbo struct {
@@ -54,6 +56,7 @@ func ToRoleDto(r models.Role) RoleDto {
 		Name:        r.Name,
 		Description: r.Description,
 		Permissions: ToPermissionDto(r.Permissions),
+		IsCustom:    r.IsCustom,
 	}
 }
 
@@ -78,6 +81,7 @@ func ToRoleDbo(r models.Role) RolesDbo {
 		Name:        r.Name,
 		Description: r.Description,
 		Permissions: ToRolePermissionDbo(r.Permissions),
+		IsCustom:    r.IsCustom,
 	}
 }
 
@@ -137,6 +141,7 @@ func (rd *RoleDto) ToValue() models.Role {
 		Name:        rd.Name,
 		Description: rd.Description,
 		Permissions: perms,
+		IsCustom:    rd.IsCustom,
 	}
 }
 
@@ -157,6 +162,7 @@ func (rd *RolesDbo) ToValue() models.Role {
 		Name:        rd.Name,
 		Description: rd.Description,
 		Permissions: perms,
+		IsCustom:    rd.IsCustom,
 	}
 }
 

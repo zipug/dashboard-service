@@ -22,7 +22,7 @@ func (repo *PostgresRepository) GetRoleById(ctx context.Context, role_id int64) 
 		ctx,
 		repo.db,
 		`
-		SELECT r.id, r.name, r.description
+		SELECT r.id, r.name, r.description, r.is_custom
 		FROM roles r
 		WHERE r.id = $1::bigint;
 		`,
@@ -81,7 +81,7 @@ func (repo *PostgresRepository) GetAllRoles(ctx context.Context) ([]dto.RolesDbo
 		ctx,
 		repo.db,
 		`
-		SELECT r.id, r.name, r.description
+		SELECT r.id, r.name, r.description, r.is_custom
 		FROM roles r
 		WHERE r.deleted_at IS NULL;
 		`,
@@ -122,8 +122,8 @@ func (repo *PostgresRepository) CreateRole(ctx context.Context, role dto.RolesDb
 		ctx,
 		repo.db,
 		`
-		INSERT INTO roles (name, description)
-		VALUES ($1::text, $2::text)
+		INSERT INTO roles (name, description, is_custom)
+		VALUES ($1::text, $2::text, true)
 		RETURNING *;
 		`,
 		role.Name,
@@ -164,6 +164,7 @@ func (repo *PostgresRepository) UpdateRole(ctx context.Context, role dto.RolesDb
 		UPDATE roles
 		SET name = $1::text, description = $2::text
 		WHERE id = $3::bigint
+		  AND is_custom is FALSE
 		RETURNING *;
 		`,
 		role.Name,
@@ -234,7 +235,8 @@ func (repo *PostgresRepository) DeleteRole(ctx context.Context, role_id int64) e
 				FROM roles r
 				WHERE r.id = $1::bigint
 				  AND r.name <> 'admin'
-			);
+			)
+			AND is_custom is FALSE;
 		`,
 		role_id,
 	)

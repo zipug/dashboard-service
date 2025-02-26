@@ -39,4 +39,5 @@ type Role struct {
 	Name        string
 	Description string
 	Permissions []PermissionData
+	IsCustom    bool
 }
