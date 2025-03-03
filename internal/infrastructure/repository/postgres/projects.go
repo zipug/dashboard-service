@@ -48,8 +48,9 @@ func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id, 
 		LEFT JOIN articles a ON p.id = a.project_id
 		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
+		LEFT JOIN users u ON u.id = ur.user_id
 		WHERE p.id = $1::bigint
-		  AND (p.user_id = $2::bigint OR r.name = 'admin')
+		  AND (p.user_id = $2::bigint OR p.user_id = u.created_by OR r.name = 'admin')
 		  AND p.deleted_at IS NULL
 		  AND a.deleted_at IS NULL;
 		`,
@@ -81,8 +82,6 @@ func (repo *PostgresRepository) GetProjectById(ctx context.Context, project_id, 
 		}
 		if content_el.Id != 0 {
 			content = append(content, content_el.ToDbo())
-		} else {
-			return nil, errors.New("could not append article to project")
 		}
 	}
 	res := dto.ProjectsContentDbo{
@@ -113,9 +112,10 @@ func (repo *PostgresRepository) GetAllProjects(ctx context.Context, user_id int6
 		LEFT JOIN articles a ON p.id = a.project_id
 		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
+		LEFT JOIN users u ON u.id = ur.user_id
 		WHERE p.deleted_at IS NULL
 		  AND a.deleted_at IS NULL
-		  AND (p.user_id = $1::bigint OR r.name = 'admin');
+		  AND (p.user_id = $1::bigint OR p.user_id = u.created_by OR r.name = 'admin');
 		`,
 		user_id,
 	)
@@ -155,7 +155,13 @@ func (repo *PostgresRepository) GetAllProjects(ctx context.Context, user_id int6
 				append(arr, content_el.ToDbo()),
 			}
 		} else {
-			return nil, errors.New("could not append article to project")
+			content_map[proj.Id] = struct {
+				Project dto.ProjectDbo
+				Content []dto.ArticleDbo
+			}{
+				proj,
+				nil,
+			}
 		}
 	}
 	for _, val := range content_map {
@@ -202,19 +208,17 @@ func (repo *PostgresRepository) UpdateProject(ctx context.Context, project dto.P
 		`
 		UPDATE projects p
 		SET name = COALESCE(NULLIF($1::text, ''), t.name),
-				description = COALESCE(NULLIF($2::text, ''), t.description),
-				avatar_url = COALESCE(NULLIF($3::text, ''), t.avatar_url),
-				remote_url = COALESCE(NULLIF($4::text, ''), t.remote_url)
+			description = COALESCE(NULLIF($2::text, ''), t.description),
+			avatar_url = COALESCE(NULLIF($3::text, ''), t.avatar_url),
+			remote_url = COALESCE(NULLIF($4::text, ''), t.remote_url)
 		FROM (
 			SELECT pt.id, pt.name, pt.description, pt.avatar_url, pt.remote_url
 			FROM projects pt
-			LEFT JOIN user_roles ur ON pt.user_id = ur.user_id
-			LEFT JOIN roles r ON ur.role_id = r.id
 			WHERE pt.id = $5::bigint
-		    AND (pt.user_id = $6::bigint OR r.name = 'admin')
+		    AND pt.user_id = $6::bigint
 		) AS t(id, name, description, avatar_url, remote_url)
 		WHERE t.id = p.id
-		RETURNING p.*;
+		RETURNING *;
 		`,
 		project.Name,
 		project.Description,

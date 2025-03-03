@@ -32,6 +32,18 @@ func (d *DashboardService) RegisterUser(user dto.UserDto) (int64, error) {
 	return id, nil
 }
 
+func (d *DashboardService) RegisterSupport(user dto.UserDto, created_by int64) (int64, error) {
+	d.log.Log("info", "registering support")
+	ctx := context.Background()
+	id, err := d.user.RegisterSupport(ctx, user.ToValue(), created_by)
+	if err != nil {
+		d.log.Log("error", "error while registering support", logger.WithErrAttr(err))
+		return int64(dto.BadUserId), err
+	}
+	d.log.Log("info", "support successfully registered", logger.WithInt64Attr("user_id", id))
+	return id, nil
+}
+
 func (d *DashboardService) LoginUser(user dto.UserDto) (models.User, error) {
 	d.log.Log("info", "login user")
 	ctx := context.Background()

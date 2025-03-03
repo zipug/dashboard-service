@@ -24,8 +24,9 @@ func (repo *PostgresRepository) GetBotById(ctx context.Context, bot_id, user_id 
 		FROM bots b
 		LEFT JOIN user_roles ur ON ur.user_id = $2::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
+		LEFT JOIN users u ON u.id = ur.user_id
 		WHERE b.id = $1::bigint
-		  AND (b.user_id = $2::bigint OR r.name = 'admin')
+		  AND (b.user_id = $2::bigint OR b.user_id = u.created_by OR r.name = 'admin')
 		  AND b.deleted_at IS NULL;
 		`,
 		bot_id,
@@ -49,7 +50,8 @@ func (repo *PostgresRepository) GetAllBots(ctx context.Context, user_id int64) (
 		FROM bots b
 		LEFT JOIN user_roles ur ON ur.user_id = $1::bigint
 		LEFT JOIN roles r ON ur.role_id = r.id
-		WHERE (b.user_id = $1::bigint OR r.name = 'admin')
+		LEFT JOIN users u ON u.id = ur.user_id
+		WHERE (b.user_id = $1::bigint OR b.user_id = u.created_by OR r.name = 'admin')
 		  AND b.deleted_at IS NULL;
 		`,
 		user_id,
@@ -94,13 +96,18 @@ func (repo *PostgresRepository) UpdateBotById(ctx context.Context, bot dto.BotDb
 		ctx,
 		repo.db,
 		`
-    UPDATE bots
-		SET name = $1::text,
-		    description = $2::text,
-		    icon = $3::text,
-		    api_token = $4::text
-		WHERE id = $5::bigint
-		  AND user_id = $6::bigint
+    UPDATE bots b
+		SET name = COALESCE(NULLIF($1::text, ''), t.name),
+		  description = COALESCE(NULLIF($2::text, ''), t.description),
+		  icon = COALESCE(NULLIF($3::text, ''), t.icon),
+		  api_token = COALESCE(NULLIF($4::text, ''), t.icon)
+		FROM (
+			SELECT bt.id, bt.name, bt.description, bt.icon, bt.api_token
+			FROM bots bt
+			WHERE bt.id = $5::bigint
+		    AND bt.user_id = $6::bigint
+		) AS t(id, name, description, icon, api_token)
+		WHERE t.id = b.id
 		RETURNING *;
 		`,
 		bot.Name,
@@ -142,14 +149,15 @@ func (repo *PostgresRepository) DeleteBotById(ctx context.Context, bot_id, user_
 }
 
 func (repo *PostgresRepository) SetBotState(ctx context.Context, state string, bot_id, user_id int64) error {
-	_, err := pu.Dispatch[dto.BotDbo](
+	rows, err := pu.Dispatch[dto.BotDbo](
 		ctx,
 		repo.db,
 		`
 		UPDATE bots
 		SET state = $1::text
 		WHERE id = $2::bigint
-		  AND user_id = $3::bigint;
+		  AND user_id = $3::bigint
+		RETURNING *;
 		`,
 		state,
 		bot_id,
@@ -157,6 +165,9 @@ func (repo *PostgresRepository) SetBotState(ctx context.Context, state string, b
 	)
 	if err != nil {
 		return err
+	}
+	if len(rows) == 0 {
+		return ErrBotNotUpdated
 	}
 	return nil
 }

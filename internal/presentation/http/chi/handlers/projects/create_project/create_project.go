@@ -41,7 +41,7 @@ func CreateProject(app DashboardService, log Logger, auth Auth) http.HandlerFunc
 			return
 		}
 		payload := req.ToValue()
-		payload.Id = int64(authUserId)
+		payload.UserId = int64(authUserId)
 		project_id, err := app.CreateProject(payload)
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")

@@ -42,31 +42,41 @@ func UploadAttachment(app DashboardService, log Logger, auth Auth) http.HandlerF
 			http.Error(w, "file too large", http.StatusRequestEntityTooLarge)
 			return
 		}
-		var buf bytes.Buffer
-		defer buf.Reset()
-		file, header, err := r.FormFile("file")
-		if err != nil {
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting file"}})
-			log.Log("error", "error while getting file", logger.WithErrAttr(err))
-			return
-		}
-		defer file.Close()
-		name := strings.Split(header.Filename, ".")
-		io.Copy(&buf, file)
-		content := buf.String()
-		log.Log(
-			"info",
-			"file uploaded",
-			logger.WithStrAttr("name", name[0]),
-			logger.WithStrAttr("extension", name[1]),
-			logger.WithInt64Attr("size", int64(len(content))),
-		)
-		attachment, err := app.UploadAttachment(header.Filename, fmt.Sprintf(".%s", name[1]), buf.Bytes(), int64(authUserId))
-		if err != nil {
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while uploading file"}})
-			return
+		var res []dto.AttachmentDto
+		files := r.MultipartForm.File["file"]
+		for _, fileHeader := range files {
+			var buf bytes.Buffer
+			defer buf.Reset()
+			file, err := fileHeader.Open()
+			if err != nil {
+				render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting file"}})
+				log.Log("error", "error while getting file", logger.WithErrAttr(err))
+				return
+			}
+			defer file.Close()
+			name := strings.Split(fileHeader.Filename, ".")
+			io.Copy(&buf, file)
+			content := buf.String()
+			log.Log(
+				"info",
+				"file uploaded",
+				logger.WithStrAttr("name", name[0]),
+				logger.WithStrAttr("extension", name[1]),
+				logger.WithInt64Attr("size", int64(len(content))),
+			)
+			attachment, err := app.UploadAttachment(
+				fileHeader.Filename,
+				fmt.Sprintf(".%s", name[1]),
+				buf.Bytes(),
+				int64(authUserId),
+			)
+			if err != nil {
+				render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while uploading file"}})
+				return
+			}
+			res = append(res, attachment)
 		}
 
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: attachment})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: res})
 	}
 }

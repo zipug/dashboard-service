@@ -21,6 +21,7 @@ type UserDto struct {
 	LastName       string       `json:"lastname,omitempty"`
 	AvatarUrl      string       `json:"avatar_url,omitempty"`
 	Role           RoleDto      `json:"role,omitempty"`
+	CreatedBy      int64        `json:"created_by,omitempty"`
 }
 
 //go:generate ../../../cmd/generator/main.go
@@ -43,6 +44,7 @@ type UserDbo struct {
 	CreatedAt sql.NullTime   `db:"created_at,omitempty"`
 	UpdatedAt sql.NullTime   `db:"updated_at,omitempty"`
 	DeleteAt  sql.NullTime   `db:"deleted_at,omitempty"`
+	CreatedBy sql.NullInt64  `db:"created_by,omitempty"`
 }
 
 type SafeUserDto struct {
@@ -52,6 +54,7 @@ type SafeUserDto struct {
 	LastName  string       `json:"lastname,omitempty"`
 	AvatarUrl string       `json:"avatar_url,omitempty"`
 	Role      RoleDto      `json:"role,omitempty"`
+	CreatedBy int64        `json:"created_by,omitempty"`
 }
 
 type VerifyUserDto struct {
@@ -68,6 +71,7 @@ func (dto *UserDto) ToValue() models.User {
 		Name:           models.Name(dto.Name),
 		LastName:       models.LastName(dto.LastName),
 		AvatarUrl:      models.AvatarUrl(dto.AvatarUrl),
+		CreatedBy:      models.CreatedBy(dto.CreatedBy),
 	}
 }
 
@@ -90,6 +94,7 @@ func (dbo *UserDbo) ToValue() models.User {
 		Name:      models.Name(dbo.Name),
 		LastName:  models.LastName(dbo.LastName),
 		AvatarUrl: models.AvatarUrl(dbo.AvatarUrl.String),
+		CreatedBy: models.CreatedBy(dbo.CreatedBy.Int64),
 	}
 }
 
@@ -103,6 +108,7 @@ func ToUserDto(user models.User) UserDto {
 		Name:           string(user.Name),
 		LastName:       string(user.LastName),
 		AvatarUrl:      string(user.AvatarUrl),
+		CreatedBy:      int64(user.CreatedBy),
 	}
 }
 
@@ -113,6 +119,7 @@ func ToSafeUserDto(user models.User) SafeUserDto {
 		Name:      string(user.Name),
 		LastName:  string(user.LastName),
 		AvatarUrl: string(user.AvatarUrl),
+		CreatedBy: int64(user.CreatedBy),
 	}
 }
 
@@ -125,5 +132,6 @@ func ToUserDbo(user models.User) UserDbo {
 		Name:      string(user.Name),
 		LastName:  string(user.LastName),
 		AvatarUrl: sql.NullString{String: string(user.AvatarUrl), Valid: true},
+		CreatedBy: sql.NullInt64{Int64: int64(user.CreatedBy), Valid: true},
 	}
 }

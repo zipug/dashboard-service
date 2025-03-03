@@ -68,6 +68,57 @@ func (repo *PostgresRepository) RegisterUser(ctx context.Context, user dto.UserD
 	return usr.Id, nil
 }
 
+func (repo *PostgresRepository) RegisterSupport(ctx context.Context, user dto.UserDbo, created_by int64) (int64, error) {
+	tx := repo.db.MustBegin()
+	usr_rows, err := pu.DispatchTx[dto.UserDbo](
+		ctx,
+		tx,
+		`
+		INSERT INTO users (state, email, password, name, lastname, avatar_url, created_by)
+		VALUES($1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::bigint)
+		RETURNING *;
+		`,
+		user.State,
+		user.Email,
+		user.Password,
+		user.Name,
+		user.LastName,
+		user.AvatarUrl,
+		created_by,
+	)
+	if err != nil {
+		tx.Rollback()
+		if errors.Is(err, ErrPqEmailAlreadyExists) {
+			return int64(dto.BadUserId), ErrEmailAlreadyExists
+		}
+		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_unique\"" {
+			return int64(dto.BadUserId), ErrEmailAlreadyExists
+		}
+		return int64(dto.BadUserId), err
+	}
+	if len(usr_rows) == 0 {
+		tx.Rollback()
+		return int64(dto.BadUserId), ErrRegister
+	}
+	usr := usr_rows[0]
+	_, err = tx.Queryx(
+		`
+		INSERT INTO user_roles (user_id, role_id)
+		SELECT $1::bigint AS user_id, r.id AS role_id
+		FROM roles r
+		WHERE r.name = $2::text
+		`,
+		usr.Id,
+		"support",
+	)
+	if err != nil {
+		tx.Rollback()
+		return int64(dto.BadUserId), err
+	}
+	tx.Commit()
+	return usr.Id, nil
+}
+
 func (repo *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (*dto.UserDbo, error) {
 	usr_rows, err := pu.Dispatch[dto.UserDbo](
 		ctx,

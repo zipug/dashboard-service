@@ -8,6 +8,7 @@ import (
 
 type UserService interface {
 	RegisterUser(context.Context, models.User) (int64, error)
+	RegisterSupport(context.Context, models.User, int64) (int64, error)
 	LoginUser(context.Context, models.User) (models.User, error)
 	GetUserById(context.Context, int64) (models.User, error)
 	GetUserByEmail(context.Context, string) (models.User, error)
@@ -21,6 +22,7 @@ type UserService interface {
 
 type UserRepository interface {
 	RegisterUser(context.Context, dto.UserDbo) (int64, error)
+	RegisterSupport(context.Context, dto.UserDbo, int64) (int64, error)
 	GetUserById(context.Context, int64) (*dto.UserDbo, error)
 	GetUserByEmail(context.Context, string) (*dto.UserDbo, error)
 	GetAllUsers(context.Context) ([]dto.UserDbo, error)

@@ -9,6 +9,7 @@ type (
 	Name      string
 	LastName  string
 	AvatarUrl string
+	CreatedBy int64
 )
 
 type State string
@@ -74,6 +75,7 @@ type User struct {
 	Name           Name
 	LastName       LastName
 	AvatarUrl      AvatarUrl
+	CreatedBy      CreatedBy
 }
 
 func (user User) IsValidForLogin() (bool, []error) {

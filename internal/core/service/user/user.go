@@ -30,6 +30,20 @@ func (u *UserService) RegisterUser(ctx context.Context, user models.User) (int64
 	return id, nil
 }
 
+func (u *UserService) RegisterSupport(ctx context.Context, user models.User, created_by int64) (int64, error) {
+	ok, errs := user.IsValid()
+	if !ok {
+		return int64(dto.BadUserId), errors.Join(errs...)
+	}
+	user.State = models.Registered
+	dbo := dto.ToUserDbo(user)
+	id, err := u.repo.RegisterSupport(ctx, dbo, created_by)
+	if err != nil {
+		return int64(dto.BadUserId), err
+	}
+	return id, nil
+}
+
 func (u *UserService) LoginUser(ctx context.Context, user models.User) (models.User, error) {
 	ok, errs := user.IsValidForLogin()
 	if !ok {
