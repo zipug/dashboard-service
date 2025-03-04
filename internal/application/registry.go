@@ -6,6 +6,7 @@ import (
 	"dashboard/internal/core/service/articles"
 	"dashboard/internal/core/service/attachments"
 	"dashboard/internal/core/service/bots"
+	"dashboard/internal/core/service/chats"
 	generatedreports "dashboard/internal/core/service/generated_reports"
 	files "dashboard/internal/core/service/minio"
 	"dashboard/internal/core/service/otp"
@@ -33,6 +34,7 @@ var (
 	botsCoreService             = bots.NewBotsService(postgresRepository, redisRepository)
 	reportsCoreService          = reports.NewReportsService(postgresRepository, redisRepository)
 	generatedReportsCoreService = generatedreports.NewGeneratedReportsService(postgresRepository)
+	chatsCoreService            = chats.NewChatsService(postgresRepository)
 	authModule                  = auth.New(configCommonService)
 )
 
@@ -49,4 +51,5 @@ var DashboardAppService = NewDashboardService(
 	botsCoreService,
 	reportsCoreService,
 	generatedReportsCoreService,
+	chatsCoreService,
 )

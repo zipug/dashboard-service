@@ -8,6 +8,7 @@ import (
 	"dashboard/internal/presentation/http/chi/routers/articles"
 	"dashboard/internal/presentation/http/chi/routers/attachments"
 	"dashboard/internal/presentation/http/chi/routers/bots"
+	"dashboard/internal/presentation/http/chi/routers/chats"
 	generatedreports "dashboard/internal/presentation/http/chi/routers/generated_reports"
 	"dashboard/internal/presentation/http/chi/routers/projects"
 	"dashboard/internal/presentation/http/chi/routers/reports"
@@ -107,6 +108,9 @@ func NewHttpServer(app *application.DashboardService) *HttpServer {
 		})
 		r.Route("/bots", func(r chi.Router) {
 			bots.BotsRouter(r)(app, log, auth, cfg)
+		})
+		r.Route("/chats", func(r chi.Router) {
+			chats.ChatsRouter(r)(app, log, auth, cfg)
 		})
 	})
 

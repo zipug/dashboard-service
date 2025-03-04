@@ -29,6 +29,7 @@ type DashboardService struct {
 	bot              ports.BotsService
 	report           ports.ReportsService
 	generated_report ports.GeneratedReportsService
+	chat             ports.ChatsService
 	log              *logger.Logger
 	state            State
 }
@@ -46,6 +47,7 @@ func NewDashboardService(
 	bot ports.BotsService,
 	report ports.ReportsService,
 	generated_report ports.GeneratedReportsService,
+	chat ports.ChatsService,
 ) *DashboardService {
 	d := &DashboardService{
 		cfg:              cfg,
@@ -60,6 +62,7 @@ func NewDashboardService(
 		bot:              bot,
 		report:           report,
 		generated_report: generated_report,
+		chat:             chat,
 	}
 
 	d.state = Created
