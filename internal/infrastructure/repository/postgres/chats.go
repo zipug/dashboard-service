@@ -27,12 +27,14 @@ func (repo *PostgresRepository) GetAllChats(ctx context.Context, user_id int64) 
 		       p.name,
 		       u.created_by,
 		       u.id AS user_id,
-		       s.is_resolved
+		       s.is_resolved,
+		       s.parent_id
 		FROM statistics s
 			LEFT JOIN bots b ON b.id = s.bot_id
 			LEFT JOIN projects p ON p.id = b.project_id
 			LEFT JOIN users u ON p.user_id = u.created_by
-		WHERE (u.id = $1::bigint OR u.created_by = $1::bigint);
+		WHERE (u.id = $1::bigint OR u.created_by = $1::bigint)
+		  AND s.parent_id IS NULL;
 		`,
 		user_id,
 	)
@@ -45,7 +47,7 @@ func (repo *PostgresRepository) GetAllChats(ctx context.Context, user_id int64) 
 	return rows, nil
 }
 
-func (repo *PostgresRepository) GetChatById(ctx context.Context, chat_id, user_id int64) (*dto.ChatDbo, error) {
+func (repo *PostgresRepository) GetChatById(ctx context.Context, chat_id, user_id int64) ([]dto.ChatDbo, error) {
 	rows, err := pu.Dispatch[dto.ChatDbo](
 		ctx,
 		repo.db,
@@ -57,15 +59,15 @@ func (repo *PostgresRepository) GetChatById(ctx context.Context, chat_id, user_i
 		       s.question,
 		       s.created_at,
 		       p.name,
-		       u.created_by,
-		       u.id AS user_id,
-		       s.is_resolved
+		       s.is_resolved,
+		       s.parent_id
 		FROM statistics s
 			LEFT JOIN bots b ON b.id = s.bot_id
 			LEFT JOIN projects p ON p.id = b.project_id
 			LEFT JOIN users u ON p.user_id = u.created_by
-		WHERE s.id = $1::bigint
-		  AND (u.id = $2::bigint OR u.created_by = $2::bigint);
+		WHERE (s.id = $1::bigint OR s.parent_id = $1::bigint)
+		  AND (u.id = $2::bigint OR u.created_by = $2::bigint)
+		GROUP BY s.id, s.bot_id, s.telegram_id, b.project_id, s.question, s.created_at, p.name, s.is_resolved, s.parent_id;
 		`,
 		chat_id,
 		user_id,
@@ -76,8 +78,7 @@ func (repo *PostgresRepository) GetChatById(ctx context.Context, chat_id, user_i
 	if len(rows) == 0 {
 		return nil, ErrChatNotFound
 	}
-	row := rows[0]
-	return &row, nil
+	return rows, nil
 }
 
 func (repo *PostgresRepository) ResolveQuestion(ctx context.Context, chat_id int64) error {

@@ -18,7 +18,7 @@ func (d *DashboardService) GetAllChats(user_id int64) ([]models.Chat, error) {
 	return chats, nil
 }
 
-func (d *DashboardService) GetChatById(chat_id, user_id int64) (models.Chat, error) {
+func (d *DashboardService) GetChatById(chat_id, user_id int64) ([]models.Chat, error) {
 	ctx := context.Background()
 	d.log.Log("info", "getting chat by chat_id", logger.WithInt64Attr("chat_id", chat_id))
 	chats, err := d.chat.GetChatById(ctx, chat_id, user_id)

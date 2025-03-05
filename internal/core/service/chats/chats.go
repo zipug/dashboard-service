@@ -14,13 +14,16 @@ func NewChatsService(repo ports.ChatsRepository) *ChatsService {
 	return &ChatsService{repo: repo}
 }
 
-func (c *ChatsService) GetChatById(ctx context.Context, chat_id, user_id int64) (models.Chat, error) {
+func (c *ChatsService) GetChatById(ctx context.Context, chat_id, user_id int64) ([]models.Chat, error) {
 	dbo, err := c.repo.GetChatById(ctx, chat_id, user_id)
 	if err != nil {
-		return models.Chat{}, err
+		return nil, err
 	}
-	chat := dbo.ToValue()
-	return chat, nil
+	var chats []models.Chat
+	for _, chat := range dbo {
+		chats = append(chats, chat.ToValue())
+	}
+	return chats, nil
 }
 
 func (c *ChatsService) GetAllChats(ctx context.Context, user_id int64) ([]models.Chat, error) {

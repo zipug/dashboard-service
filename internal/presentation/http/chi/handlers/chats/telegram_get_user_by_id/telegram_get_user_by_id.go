@@ -1,4 +1,4 @@
-package getallchats
+package telegramgetuserbyid
 
 import (
 	"dashboard/internal/application/dto"
@@ -6,15 +6,13 @@ import (
 	"dashboard/internal/core/models"
 	"dashboard/internal/presentation/http/chi/handlers"
 	"net/http"
-	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type DashboardService interface {
-	GetChatById(chat_id, user_id int64) ([]models.Chat, error)
+	GetTelegramUserById(user_id, statistics_id, bot_id, telegram_id int64) (models.ChatMember, error)
 }
 
 type Logger interface {
@@ -25,7 +23,7 @@ type Auth interface {
 	GetClaims(r *http.Request) map[string]interface{}
 }
 
-func GetChatById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
+func GetTelegramUserById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		authClaims := auth.GetClaims(r)
@@ -35,27 +33,19 @@ func GetChatById(app DashboardService, log Logger, auth Auth) http.HandlerFunc {
 			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"invalid user_id in jwt token"}})
 			return
 		}
-		query_id := chi.URLParam(r, "id")
-		if query_id == "" {
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
+		var req dto.GetTelegramUserRequest
+		if err := render.DecodeJSON(r.Body, &req); err != nil {
+			log.Log("error", "error while decoding request body", logger.WithErrAttr(err))
+			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while decoding request body"}})
 			return
 		}
-		id, err := strconv.ParseInt(query_id, 10, 64)
-		if err != nil {
-			render.JSON(w, r, handlers.Response{Status: handlers.Failed, Errors: []string{"error while getting id"}})
-			return
-		}
-		chats, err := app.GetChatById(id, int64(authUserId))
+		user, err := app.GetTelegramUserById(int64(authUserId), req.Id, req.BotId, req.TelegramId)
 		if err != nil {
 			errs := strings.Split(err.Error(), "\n")
 			resp := handlers.Response{Status: handlers.Failed, Errors: errs}
 			render.JSON(w, r, resp)
 			return
 		}
-		var resp []dto.ChatDto
-		for _, chat := range chats {
-			resp = append(resp, dto.ToChatDto(chat))
-		}
-		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: resp})
+		render.JSON(w, r, handlers.Response{Status: handlers.Success, Data: dto.ToTelegramUserProfileDto(user)})
 	}
 }

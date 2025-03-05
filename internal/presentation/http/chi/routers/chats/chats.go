@@ -7,7 +7,8 @@ import (
 	l "dashboard/internal/common/service/logger/zerolog"
 	getallchats "dashboard/internal/presentation/http/chi/handlers/chats/get_all_chats"
 	getchatsbyid "dashboard/internal/presentation/http/chi/handlers/chats/get_chats_by_id"
-	resolvechat "dashboard/internal/presentation/http/chi/handlers/chats/resolve_chat"
+	telegramgetuserbyid "dashboard/internal/presentation/http/chi/handlers/chats/telegram_get_user_by_id"
+	telegramsendmessage "dashboard/internal/presentation/http/chi/handlers/chats/telegram_send_message"
 	"dashboard/pkg/middlewares/can"
 
 	"github.com/go-chi/chi/v5"
@@ -36,11 +37,12 @@ func ChatsRouter(r chi.Router) func(
 				Group(func(r chi.Router) {
 					r.Get("/{id}", getchatsbyid.GetChatById(app, log, auth))
 					r.Get("/all", getallchats.GetAllChats(app, log, auth))
+					r.Post("/tg-user", telegramgetuserbyid.GetTelegramUserById(app, log, auth))
 				})
 			r.
 				With(guard.Can(auth.GetTokenAuth(), "chats_feature:update")).
 				Group(func(r chi.Router) {
-					r.Post("/resolve/{id}", resolvechat.ResolveQuestion(app, log))
+					r.Post("/send-message", telegramsendmessage.SendMessage(app, log, auth))
 				})
 		})
 		return r

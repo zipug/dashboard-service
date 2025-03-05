@@ -11,6 +11,7 @@ type Chat struct {
 	UserId     int64
 	Name       string
 	Question   string
+	ParentId   int64
 	CreatedAt  time.Time
 	IsResolved bool
 }

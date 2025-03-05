@@ -30,6 +30,7 @@ type DashboardService struct {
 	report           ports.ReportsService
 	generated_report ports.GeneratedReportsService
 	chat             ports.ChatsService
+	telegram         ports.TelegramService
 	log              *logger.Logger
 	state            State
 }
@@ -48,6 +49,7 @@ func NewDashboardService(
 	report ports.ReportsService,
 	generated_report ports.GeneratedReportsService,
 	chat ports.ChatsService,
+	telegram ports.TelegramService,
 ) *DashboardService {
 	d := &DashboardService{
 		cfg:              cfg,
@@ -63,6 +65,7 @@ func NewDashboardService(
 		report:           report,
 		generated_report: generated_report,
 		chat:             chat,
+		telegram:         telegram,
 	}
 
 	d.state = Created

@@ -52,7 +52,7 @@ func UsersRouter(r chi.Router) func(
 						Delete("/{id}", deleteuserbyid.DeleteUserById(app, log))
 					r.
 						With(guard.Can(auth.GetTokenAuth(), "users_feature:create")).
-						Post("/register", register.RegisterUser(app, log, auth, cfg.AccessTokenExpiration))
+						Post("/register-support", register.RegisterSupportUser(app, log, auth, cfg.AccessTokenExpiration))
 				})
 
 				r.Get("/{id}", getuserbyid.GetUserById(app, log))
@@ -62,7 +62,7 @@ func UsersRouter(r chi.Router) func(
 			})
 
 			r.Group(func(r chi.Router) {
-				// r.Post("/register", register.RegisterUser(app, log, auth, cfg.AccessTokenExpiration))
+				r.Post("/register", register.RegisterUser(app, log, auth, cfg.AccessTokenExpiration))
 				r.Post("/login", login.LoginUser(app, log, auth, cfg.AccessTokenExpiration))
 				r.Post("/send-code", sendotp.SendOTP(app, log))
 			})

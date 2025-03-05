@@ -13,6 +13,7 @@ import (
 	"dashboard/internal/core/service/projects"
 	"dashboard/internal/core/service/reports"
 	"dashboard/internal/core/service/roles"
+	"dashboard/internal/core/service/telegram"
 	"dashboard/internal/core/service/user"
 	"dashboard/internal/infrastructure/repository/minio"
 	"dashboard/internal/infrastructure/repository/postgres"
@@ -35,6 +36,7 @@ var (
 	reportsCoreService          = reports.NewReportsService(postgresRepository, redisRepository)
 	generatedReportsCoreService = generatedreports.NewGeneratedReportsService(postgresRepository)
 	chatsCoreService            = chats.NewChatsService(postgresRepository)
+	telegramCoreService         = telegram.NewTelegramService(postgresRepository)
 	authModule                  = auth.New(configCommonService)
 )
 
@@ -52,4 +54,5 @@ var DashboardAppService = NewDashboardService(
 	reportsCoreService,
 	generatedReportsCoreService,
 	chatsCoreService,
+	telegramCoreService,
 )
